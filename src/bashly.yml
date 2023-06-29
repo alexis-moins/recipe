@@ -1,0 +1,60 @@
+name: recipe
+help: Store files/templates in a recipe book to use them anytime!
+version: 0.1.0
+
+environment_variables:
+- name: EDITOR
+  help: Used to controller which editor to use for interactive commands
+
+- name: RECIPE_BOOK_DIR
+  help: In which directory to store recipes (or ~/recipe-book)
+
+dependencies:
+- git
+- fd
+- gum
+
+commands:
+- name: add
+  alias: a
+  help: Add a new file to your recipe book
+
+  args:
+  - name: path
+    required: true
+    help: Path of the new recipe
+
+  flags:
+  - long: --file
+    short: -f
+    arg: file
+    help: Use the following file for this recipe
+
+  examples:
+  - recipe add work/docker-compose.yaml
+  - recipe add ssh-config -f ~/.ssh/config
+
+- name: init
+  alias: i
+  help: Init your recipe book
+
+  examples:
+  - recipe init
+
+- name: use
+  alias: u
+  help: Use a recipe from your recipe book
+
+  args:
+  - name: path
+    help: Path of the recipe to use
+
+  flags:
+  - short: -d
+    long: --destination
+    arg: destination
+    help: Destination path for the recipe
+
+  examples:
+  - recipe use work/docker-compose.yaml
+  - recipe use ssh-config -d ~/.ssh/config
