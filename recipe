@@ -36,6 +36,8 @@ recipe_usage() {
   printf "%s\n" "Commands:"
   printf "  %s   Add a new file to your recipe book\n" "add "
   printf "  %s   Init your recipe book\n" "init"
+  printf "  %s   List all recipes from your recipe book\n" "list"
+  printf "  %s   Run git commands inside your recipe book\n" "git "
   printf "  %s   Use a recipe from your recipe book\n" "use "
   echo
 
@@ -56,12 +58,14 @@ recipe_usage() {
 
     # :environment_variable.usage
     printf "  %s\n" "EDITOR"
-    printf "    Used to controller which editor to use for interactive commands\n"
+    printf "    Editor to use for interactive commands\n"
+    printf "    Default: vim\n"
     echo
 
     # :environment_variable.usage
     printf "  %s\n" "RECIPE_BOOK_DIR"
-    printf "    In which directory to store recipes (or ~/recipe-book)\n"
+    printf "    Where to store recipes\n"
+    printf "    Default: ${HOME}/recipe-book\n"
     echo
 
   fi
@@ -83,7 +87,7 @@ recipe_add_usage() {
   echo
 
   printf "%s\n" "Usage:"
-  printf "  recipe add PATH [OPTIONS]\n"
+  printf "  recipe add NAME [OPTIONS]\n"
   printf "  recipe add --help | -h\n"
   echo
 
@@ -106,14 +110,14 @@ recipe_add_usage() {
     printf "%s\n" "Arguments:"
 
     # :argument.usage
-    printf "  %s\n" "PATH"
-    printf "    Path of the new recipe\n"
+    printf "  %s\n" "NAME"
+    printf "    Name of the new recipe\n"
     echo
 
     # :command.usage_examples
     printf "%s\n" "Examples:"
-    printf "  recipe add work/docker-compose.yaml\n"
     printf "  recipe add ssh-config -f ~/.ssh/config\n"
+    printf "  recipe add work/Dockerfile.express (interactively)\n"
     echo
 
   fi
@@ -157,6 +161,88 @@ recipe_init_usage() {
 }
 
 # :command.usage
+recipe_list_usage() {
+  if [[ -n $long_usage ]]; then
+    printf "recipe list - List all recipes from your recipe book\n"
+    echo
+
+  else
+    printf "recipe list - List all recipes from your recipe book\n"
+    echo
+
+  fi
+
+  printf "Alias: l\n"
+  echo
+
+  printf "%s\n" "Usage:"
+  printf "  recipe list\n"
+  printf "  recipe list --help | -h\n"
+  echo
+
+  # :command.long_usage
+  if [[ -n $long_usage ]]; then
+    printf "%s\n" "Options:"
+
+    # :command.usage_fixed_flags
+    printf "  %s\n" "--help, -h"
+    printf "    Show this help\n"
+    echo
+
+    # :command.usage_examples
+    printf "%s\n" "Examples:"
+    printf "  recipe list\n"
+    echo
+
+  fi
+}
+
+# :command.usage
+recipe_git_usage() {
+  if [[ -n $long_usage ]]; then
+    printf "recipe git - Run git commands inside your recipe book\n"
+    echo
+
+  else
+    printf "recipe git - Run git commands inside your recipe book\n"
+    echo
+
+  fi
+
+  printf "Alias: g\n"
+  echo
+
+  printf "%s\n" "Usage:"
+  printf "  recipe git COMMAND...\n"
+  printf "  recipe git --help | -h\n"
+  echo
+
+  # :command.long_usage
+  if [[ -n $long_usage ]]; then
+    printf "%s\n" "Options:"
+
+    # :command.usage_fixed_flags
+    printf "  %s\n" "--help, -h"
+    printf "    Show this help\n"
+    echo
+
+    # :command.usage_args
+    printf "%s\n" "Arguments:"
+
+    echo "  COMMAND..."
+    printf "    Command to run inside the recipe book\n"
+    echo
+
+    # :command.usage_examples
+    printf "%s\n" "Examples:"
+    printf "  recipe git log\n"
+    printf "  recipe git remote add origin <repo>\n"
+    echo
+
+  fi
+}
+
+# :command.usage
 recipe_use_usage() {
   if [[ -n $long_usage ]]; then
     printf "recipe use - Use a recipe from your recipe book\n"
@@ -172,7 +258,7 @@ recipe_use_usage() {
   echo
 
   printf "%s\n" "Usage:"
-  printf "  recipe use [PATH] [OPTIONS]\n"
+  printf "  recipe use [NAME] [OPTIONS]\n"
   printf "  recipe use --help | -h\n"
   echo
 
@@ -195,14 +281,14 @@ recipe_use_usage() {
     printf "%s\n" "Arguments:"
 
     # :argument.usage
-    printf "  %s\n" "PATH"
-    printf "    Path of the recipe to use\n"
+    printf "  %s\n" "NAME"
+    printf "    Name of the recipe\n"
     echo
 
     # :command.usage_examples
     printf "%s\n" "Examples:"
-    printf "  recipe use work/docker-compose.yaml\n"
     printf "  recipe use ssh-config -d ~/.ssh/config\n"
+    printf "  recipe use work/Dockerfile.express (interactively)\n"
     echo
 
   fi
@@ -260,25 +346,102 @@ inspect_args() {
 
 }
 
+# :command.user_lib
+# src/lib/colors.sh
+print_in_color() {
+  local color="$1"
+  shift
+  if [[ -z ${NO_COLOR+x} ]]; then
+    printf "$color%b\e[0m\n" "$*"
+  else
+    printf "%b\n" "$*"
+  fi
+}
+
+red() { print_in_color "\e[31m" "$*"; }
+green() { print_in_color "\e[32m" "$*"; }
+yellow() { print_in_color "\e[33m" "$*"; }
+blue() { print_in_color "\e[34m" "$*"; }
+magenta() { print_in_color "\e[35m" "$*"; }
+cyan() { print_in_color "\e[36m" "$*"; }
+bold() { print_in_color "\e[1m" "$*"; }
+underlined() { print_in_color "\e[4m" "$*"; }
+red_bold() { print_in_color "\e[1;31m" "$*"; }
+green_bold() { print_in_color "\e[1;32m" "$*"; }
+yellow_bold() { print_in_color "\e[1;33m" "$*"; }
+blue_bold() { print_in_color "\e[1;34m" "$*"; }
+magenta_bold() { print_in_color "\e[1;35m" "$*"; }
+cyan_bold() { print_in_color "\e[1;36m" "$*"; }
+red_underlined() { print_in_color "\e[4;31m" "$*"; }
+green_underlined() { print_in_color "\e[4;32m" "$*"; }
+yellow_underlined() { print_in_color "\e[4;33m" "$*"; }
+blue_underlined() { print_in_color "\e[4;34m" "$*"; }
+magenta_underlined() { print_in_color "\e[4;35m" "$*"; }
+cyan_underlined() { print_in_color "\e[4;36m" "$*"; }
+
+# src/lib/ensure_recipe_book_setup.sh
+ensure_recipe_book_setup() {
+    if [[ ! -d "${RECIPE_BOOK_DIR}/.git" ]]; then
+        echo "Your recipe book is not initialized."
+        echo "Run $(blue recipe init) first."
+        exit 1
+    fi
+}
+
+# src/lib/run_silent.sh
+run_silent() {
+  ${@} 1> /dev/null
+}
+
+# src/lib/validations/validate_dir_exists.sh
+validate_dir_exists() {
+  [[ -d "$1" ]] || echo "must be an existing directory"
+}
+
+# src/lib/validations/validate_file_exists.sh
+validate_file_exists() {
+  [[ -f "$1" ]] || echo "must be an existing file"
+}
+
+# src/lib/validations/validate_integer.sh
+validate_integer() {
+  [[ "$1" =~ ^[0-9]+$ ]] || echo "must be an integer"
+}
+
+# src/lib/validations/validate_not_empty.sh
+validate_not_empty() {
+  [[ -z "$1" ]] && echo "must not be empty"
+}
+
+# src/lib/validations/validate_recipe_exists.sh
+validate_recipe_exists() {
+    [[ -f "${RECIPE_BOOK_DIR:-${HOME}/recipe-book}/$1" ]] || echo "must be an existing recipe"
+}
+
+# src/lib/validations/validate_recipe_missing.sh
+validate_recipe_missing() {
+    [[ ! -f "${RECIPE_BOOK_DIR:-${HOME}/recipe-book}/$1" ]] || echo "Your recipe book already contains that recipe."
+}
+
 # :command.command_functions
 # :command.function
 recipe_add_command() {
   # src/add_command.sh
-  echo "# this file is located in 'src/add_command.sh'"
-  echo "# code for 'recipe add' goes here"
-  echo "# you can edit it freely and regenerate (it will not be overwritten)"
   inspect_args
 
   destination=${args['name']}
   file=${args['--file']}
 
-  function copy_recipe() {
-      \cp ${1} ${2} && echo "New recipe added!"
-  }
+  if [[ -n ${file} ]]; then
+      \cp ${file} "${RECIPE_BOOK_DIR}/${destination}"
+      echo "$(green ✔) New recipe added."
+  else
+      ${EDITOR} "${RECIPE_BOOK_DIR}/${destination}"
 
-  [[ -f $destination ]] && echo "There is already a recipe with that name." && exit 1
-
-  [[ -n ${file} ]] && copy_recipe ${file} ${destination} || $EDITOR ${destination}
+      [[ -f "${RECIPE_BOOK_DIR}/${destination}" ]] && \
+          echo "$(green ✔) New recipe added." || \
+          echo "The recipe was not added to your recipe book."
+  fi
 
 }
 
@@ -305,6 +468,26 @@ recipe_init_command() {
 
   run_silent popd
   echo "Your recipe book has been created!"
+
+}
+
+# :command.function
+recipe_list_command() {
+  # src/list_command.sh
+  ensure_recipe_book_setup
+
+  run_silent pushd "${RECIPE_BOOK_DIR}"
+  \fd --color=never --hidden .
+
+  run_silent popd
+
+}
+
+# :command.function
+recipe_git_command() {
+  # src/git_command.sh
+  ensure_recipe_book_setup
+  ${deps["git"]} -C "${RECIPE_BOOK_DIR}" ${other_args[*]}
 
 }
 
@@ -340,6 +523,11 @@ parse_requirements() {
 
     esac
   done
+
+  # :command.environment_variables_filter
+  # :command.environment_variables_default
+  export EDITOR="${EDITOR:-vim}"
+  export RECIPE_BOOK_DIR="${RECIPE_BOOK_DIR:-${HOME}/recipe-book}"
 
   # :command.dependencies_filter
   if command -v git >/dev/null 2>&1; then
@@ -380,6 +568,20 @@ parse_requirements() {
       action="init"
       shift
       recipe_init_parse_requirements "$@"
+      shift $#
+      ;;
+
+    list | l)
+      action="list"
+      shift
+      recipe_list_parse_requirements "$@"
+      shift $#
+      ;;
+
+    git | g)
+      action="git"
+      shift
+      recipe_git_parse_requirements "$@"
       shift $#
       ;;
 
@@ -456,6 +658,11 @@ recipe_add_parse_requirements() {
 
         # :flag.case_arg
         if [[ -n ${2+x} ]]; then
+          # :flag.validations
+          if [[ -n $(validate_file_exists "$2") ]]; then
+            printf "validation error in %s:\n%s\n" "--file, -f FILE" "$(validate_file_exists "$2")" >&2
+            exit 1
+          fi
 
           args['--file']="$2"
           shift
@@ -474,9 +681,14 @@ recipe_add_parse_requirements() {
       *)
         # :command.parse_requirements_case
         # :command.parse_requirements_case_simple
-        if [[ -z ${args['path']+x} ]]; then
+        if [[ -z ${args['name']+x} ]]; then
+          # :argument.validations
+          if [[ -n $(validate_recipe_missing "$1") ]]; then
+            printf "validation error in %s:\n%s\n" "NAME" "$(validate_recipe_missing "$1")" >&2
+            exit 1
+          fi
 
-          args['path']=$1
+          args['name']=$1
           shift
         else
           printf "invalid argument: %s\n" "$key" >&2
@@ -489,8 +701,8 @@ recipe_add_parse_requirements() {
   done
 
   # :command.required_args_filter
-  if [[ -z ${args['path']+x} ]]; then
-    printf "missing required argument: PATH\nusage: recipe add PATH [OPTIONS]\n" >&2
+  if [[ -z ${args['name']+x} ]]; then
+    printf "missing required argument: NAME\nusage: recipe add NAME [OPTIONS]\n" >&2
     exit 1
   fi
 
@@ -537,6 +749,106 @@ recipe_init_parse_requirements() {
 
     esac
   done
+
+}
+
+# :command.parse_requirements
+recipe_list_parse_requirements() {
+  # :command.fixed_flags_filter
+  while [[ $# -gt 0 ]]; do
+    case "${1:-}" in
+      --help | -h)
+        long_usage=yes
+        recipe_list_usage
+        exit
+        ;;
+
+      *)
+        break
+        ;;
+
+    esac
+  done
+
+  # :command.command_filter
+  action="list"
+
+  # :command.parse_requirements_while
+  while [[ $# -gt 0 ]]; do
+    key="$1"
+    case "$key" in
+
+      -?*)
+        printf "invalid option: %s\n" "$key" >&2
+        exit 1
+        ;;
+
+      *)
+        # :command.parse_requirements_case
+        # :command.parse_requirements_case_simple
+        printf "invalid argument: %s\n" "$key" >&2
+        exit 1
+
+        ;;
+
+    esac
+  done
+
+}
+
+# :command.parse_requirements
+recipe_git_parse_requirements() {
+  # :command.fixed_flags_filter
+  while [[ $# -gt 0 ]]; do
+    case "${1:-}" in
+      --help | -h)
+        long_usage=yes
+        recipe_git_usage
+        exit
+        ;;
+
+      *)
+        break
+        ;;
+
+    esac
+  done
+
+  # :command.command_filter
+  action="git"
+
+  # :command.parse_requirements_while
+  while [[ $# -gt 0 ]]; do
+    key="$1"
+    case "$key" in
+
+      --)
+        shift
+        other_args+=("$@")
+        break
+        ;;
+
+      -?*)
+        other_args+=("$1")
+        shift
+        ;;
+
+      *)
+        # :command.parse_requirements_case
+        # :command.parse_requirements_case_catch_all
+        other_args+=("$1")
+        shift
+
+        ;;
+
+    esac
+  done
+
+  # :command.catch_all_filter
+  if [[ ${#other_args[@]} -eq 0 ]]; then
+    printf "missing required argument: COMMAND...\nusage: recipe git COMMAND...\n" >&2
+    exit 1
+  fi
 
 }
 
@@ -588,9 +900,14 @@ recipe_use_parse_requirements() {
       *)
         # :command.parse_requirements_case
         # :command.parse_requirements_case_simple
-        if [[ -z ${args['path']+x} ]]; then
+        if [[ -z ${args['name']+x} ]]; then
+          # :argument.validations
+          if [[ -n $(validate_recipe_exists "$1") ]]; then
+            printf "validation error in %s:\n%s\n" "NAME" "$(validate_recipe_exists "$1")" >&2
+            exit 1
+          fi
 
-          args['path']=$1
+          args['name']=$1
           shift
         else
           printf "invalid argument: %s\n" "$key" >&2
@@ -610,6 +927,10 @@ initialize() {
   long_usage=''
   set -e
 
+  # :command.environment_variables_default
+  export EDITOR="${EDITOR:-vim}"
+  export RECIPE_BOOK_DIR="${RECIPE_BOOK_DIR:-${HOME}/recipe-book}"
+
 }
 
 # :command.run
@@ -624,6 +945,8 @@ run() {
   case "$action" in
     "add") recipe_add_command ;;
     "init") recipe_init_command ;;
+    "list") recipe_list_command ;;
+    "git") recipe_git_command ;;
     "use") recipe_use_command ;;
   esac
 }

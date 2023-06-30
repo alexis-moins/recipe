@@ -3,11 +3,13 @@ help: Store files/templates in a recipe book to use them anytime!
 version: 0.1.0
 
 environment_variables:
-- name: EDITOR
-  help: Used to controller which editor to use for interactive commands
+- name: editor
+  help: Editor to use for interactive commands
+  default: vim
 
-- name: RECIPE_BOOK_DIR
-  help: In which directory to store recipes (or ~/recipe-book)
+- name: recipe_book_dir
+  help: Where to store recipes
+  default: ${HOME}/recipe-book
 
 dependencies:
 - git
@@ -20,19 +22,21 @@ commands:
   help: Add a new file to your recipe book
 
   args:
-  - name: path
+  - name: name
     required: true
-    help: Path of the new recipe
+    help: Name of the new recipe
+    validate: recipe_missing
 
   flags:
   - long: --file
     short: -f
     arg: file
     help: Use the following file for this recipe
+    validate: file_exists
 
   examples:
-  - recipe add work/docker-compose.yaml
   - recipe add ssh-config -f ~/.ssh/config
+  - recipe add work/Dockerfile.express (interactively)
 
 - name: init
   alias: i
@@ -41,13 +45,34 @@ commands:
   examples:
   - recipe init
 
+- name: list
+  alias: l
+  help: List all recipes from your recipe book
+
+  examples:
+  - recipe list
+
+- name: git
+  alias: g
+  help: Run git commands inside your recipe book
+
+  catch_all:
+    label: COMMAND
+    help: Command to run inside the recipe book
+    required: true
+
+  examples:
+  - recipe git log
+  - recipe git remote add origin <repo>
+
 - name: use
   alias: u
   help: Use a recipe from your recipe book
 
   args:
-  - name: path
-    help: Path of the recipe to use
+  - name: name
+    help: Name of the recipe
+    validate: recipe_exists
 
   flags:
   - short: -d
@@ -56,5 +81,5 @@ commands:
     help: Destination path for the recipe
 
   examples:
-  - recipe use work/docker-compose.yaml
   - recipe use ssh-config -d ~/.ssh/config
+  - recipe use work/Dockerfile.express (interactively)
