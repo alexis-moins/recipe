@@ -1,5 +1,5 @@
 local recipe=${args['name']}
-local file=${args['--file']}
+local file=${args['--from']}
 
 local recipe_dir="$(dirname ${recipe})"
 

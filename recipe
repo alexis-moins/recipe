@@ -88,7 +88,7 @@ recipe_add_usage() {
   if [[ -n $long_usage ]]; then
     printf "%s\n" "Options:"
 
-    printf "  %s\n" "--file, -f FILE"
+    printf "  %s\n" "--from, -f FILE"
     printf "    Use the following file for this recipe\n"
     echo
 
@@ -538,7 +538,7 @@ validate_recipe_missing() {
 
 recipe_add_command() {
   local recipe=${args['name']}
-  local file=${args['--file']}
+  local file=${args['--from']}
 
   local recipe_dir="$(dirname ${recipe})"
 
@@ -851,20 +851,20 @@ recipe_add_parse_requirements() {
     key="$1"
     case "$key" in
 
-      --file | -f)
+      --from | -f)
 
         if [[ -n ${2+x} ]]; then
 
           if [[ -n $(validate_file_exists "$2") ]]; then
-            printf "validation error in %s:\n%s\n" "--file, -f FILE" "$(validate_file_exists "$2")" >&2
+            printf "validation error in %s:\n%s\n" "--from, -f FILE" "$(validate_file_exists "$2")" >&2
             exit 1
           fi
 
-          args['--file']="$2"
+          args['--from']="$2"
           shift
           shift
         else
-          printf "%s\n" "--file requires an argument: --file, -f FILE" >&2
+          printf "%s\n" "--from requires an argument: --from, -f FILE" >&2
           exit 1
         fi
         ;;

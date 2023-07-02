@@ -31,7 +31,7 @@ commands:
     validate: recipe_missing
 
   flags:
-  - long: --file
+  - long: --from
     short: -f
     arg: file
     help: Use the following file for this recipe
