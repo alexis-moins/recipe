@@ -1,7 +1,5 @@
 <div align='center'>
 
-# recipe
-
 ```
                 _            
                (_)           
@@ -19,7 +17,7 @@
 
 ---
 
-recipe is a bash script allowing users to manage a git repository (called a `recipe book`) of files commonly used across different projects or directories (called `recipes`). You could, for instance, add generic Dockerfile or docker-compose.yaml files to your recipe book to easily bootstrap new docker projects.
+`recipe` is a bash script allowing users to manage a git repository (called a `recipe book`) of files commonly used across different projects or directories (called `recipes`). You could, for instance, add generic Dockerfile or docker-compose.yaml files to your recipe book to easily bootstrap new docker projects.
 
 ## Prerequisites
 
@@ -31,7 +29,7 @@ recipe is a bash script allowing users to manage a git repository (called a `rec
 
 ## Installation
 
-### Using recipe itself
+### Using recipe
 
 Clone the repository in the default location `~/.recipe`. Then, `cd` into the directory and run the following command:
 ```bash
@@ -53,7 +51,7 @@ After installing, you can follow these steps to quickly see how it works:
 
 ```bash
 # Add a recipe
-recipe add docker/express-js --file Dockerfile
+recipe add docker/express-js --from Dockerfile
 
 # View list of recipes
 recipe list
