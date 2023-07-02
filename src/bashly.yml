@@ -1,5 +1,5 @@
 name: recipe
-help: Store files/templates in a recipe book to use them anytime!
+help: Store files/templates in a recipe book to use them anytime, anywhere
 version: 0.1.0
 
 environment_variables:
@@ -8,8 +8,12 @@ environment_variables:
   default: vim
 
 - name: recipe_book_dir
-  help: Where to store recipes
+  help: Directories used to store recipes
   default: ${HOME}/recipe-book
+
+- name: recipe_source_dir
+  help: Directories containing the source repository
+  default: ${HOME}/.recipe
 
 dependencies:
 - git
@@ -18,8 +22,7 @@ dependencies:
 
 commands:
 - name: add
-  alias: a
-  help: Add a new file to your recipe book
+  help: Add a new recipe
 
   args:
   - name: name
@@ -35,26 +38,18 @@ commands:
     validate: file_exists
 
   examples:
-  - recipe add ssh-config -f ~/.ssh/config
-  - recipe add work/Dockerfile.express (interactively)
-
-- name: init
-  alias: i
-  help: Init your recipe book
-
-  examples:
-  - recipe init
+    - recipe add work/Dockerfile.express
+    - recipe add ssh-config -f ~/.ssh/config
 
 - name: list
-  alias: l
-  help: List all recipes from your recipe book
+  alias: ls
+  help: List all your recipes
 
   examples:
   - recipe list
 
 - name: git
-  alias: g
-  help: Run git commands inside your recipe book
+  help: Access git from your recipe book
 
   catch_all:
     label: COMMAND
@@ -66,8 +61,7 @@ commands:
   - recipe git remote add origin <repo>
 
 - name: use
-  alias: u
-  help: Use a recipe from your recipe book
+  help: Use a recipe localy
 
   args:
   - name: name
@@ -81,5 +75,77 @@ commands:
     help: Destination path for the recipe
 
   examples:
+  - recipe use
   - recipe use ssh-config -d ~/.ssh/config
-  - recipe use work/Dockerfile.express (interactively)
+
+- name: remove
+  alias: rm
+  help: Remove a recipe
+
+  args:
+    - name: name
+      help: Name of the recipe to remove
+      validate: recipe_exists
+
+  flags:
+    - short: -y
+      long: --yes
+      help: Do not ask for confirmation
+
+  examples:
+    - recipe remove
+    - recipe remove ssh-config --yes
+
+- name: edit
+  help: Edit a recipe
+
+  args:
+    - name: name
+      help: Name of the recipe to edit
+      validate: recipe_exists
+
+  examples:
+    - recipe edit
+    - recipe edit ssh-config
+
+- name: clone
+  help: Clone a remote git repository
+
+  args:
+    - name: url
+      help: Remote repository url
+      required: true
+
+  flags:
+    - short: -y
+      long: --yes
+      help: Do not ask for confirmation
+
+  examples:
+    - 'recipe clone git@github:awesome-user/recipe-book.git --yes'
+
+- name: link
+  help: Create a symbolic link to the recipe executable
+
+  args:
+    - name: path
+      help: Path to the symbolic link
+      default: ${HOME}/.local/bin
+
+  flags:
+    - short: -r
+      long: --remove
+      help: Remove the symbolic link instead
+
+    - short: -s
+      long: --source
+      arg: source
+      help: |-
+        Path to the directory containing the recipe script
+        It overwrites the RECIPE_DIR variable
+
+  environment_variables:
+    - name: recipe_dir
+      help: Directory containing the recipe script
+      default: ${HOME}/.recipe
+

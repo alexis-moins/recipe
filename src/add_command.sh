@@ -1,15 +1,26 @@
-inspect_args
+local recipe=${args['name']}
+local file=${args['--file']}
 
-destination=${args['name']}
-file=${args['--file']}
+local recipe_dir="$(dirname ${recipe})"
 
-if [[ -n ${file} ]]; then
-    \cp ${file} "${RECIPE_BOOK_DIR}/${destination}"
-    echo "$(green ✔) New recipe added."
+# Full destination path to the recipe
+local destination_path="${RECIPE_BOOK_DIR}/${recipe}"
+
+# Directory in which the recipe will be stored
+local destination_dir="${RECIPE_BOOK_DIR}/${recipe_dir}"
+
+if [[ -n "${recipe_dir}" ]] && [[ ! -d "${destination_dir}" ]]; then
+    run_silent \mkdir "${destination_dir}"
+fi
+
+[[ -n ${file} ]] && \cp ${file} "${destination_path}" || ${EDITOR} "${destination_path}"
+
+if [[ -f "${destination_path}" ]]; then
+    run_git add "${recipe}"
+    git_commit "feat: added recipe '${recipe}'"
+
+    echo "$(green ✔) New recipe added"
 else
-    ${EDITOR} "${RECIPE_BOOK_DIR}/${destination}"
-
-    [[ -f "${RECIPE_BOOK_DIR}/${destination}" ]] && \
-        echo "$(green ✔) New recipe added." || \
-        echo "The recipe was not added to your recipe book."
+    clean_directory "${destination_dir}"
+    echo "The recipe was not added to your recipe book"
 fi
