@@ -1,6 +1,6 @@
 local path="${args[path]}"
 
-local source="${args[--source]:-${RECIPE_DIR}}"
+local source="${args[--source]}"
 local remove="${args[--remove]}"
 
 if [[ -n "${remove}" ]]; then

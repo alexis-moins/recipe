@@ -90,6 +90,7 @@ Commands:
   edit     Edit a recipe
   clone    Clone a remote git repository
   link     Create a symbolic link to the recipe executable
+  show     Show the content of a recipe
 
 Options:
   --help, -h
@@ -105,9 +106,5 @@ Environment Variables:
 
   RECIPE_BOOK_DIR
     Directories used to store recipes
-    Default: /Users/alexis/recipe-book
-
-  RECIPE_SOURCE_DIR
-    Directories containing the source repository
-    Default: /Users/alexis/.recipe
+    Default: ~/recipe-book
 ```

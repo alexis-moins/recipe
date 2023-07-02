@@ -136,14 +136,8 @@ commands:
     - short: -s
       long: --source
       arg: source
-      help: |-
-        Path to the directory containing the recipe script
-        It overwrites the RECIPE_DIR variable
-
-  environment_variables:
-    - name: recipe_dir
-      help: Directory containing the recipe script
       default: ${HOME}/.recipe
+      help: Path to the directory containing the recipe script
 
   examples:
     - recipe link /usr/local/bin
@@ -157,19 +151,11 @@ commands:
       help: Name of the recipe
       validate: recipe_exists
 
-  flags:
-    - short: -c
-      long: --command
-      help: |-
-        Command used to print the recipe
-        It overwrites the RECIPE_SHOW_COMMAND variable
-      arg: executable
-
   environment_variables:
     - name: recipe_show_command
-      help: Executable used by the recipe show command
+      help: Executable used to print the recipe
       default: cat
 
   examples:
     - recipe show
-    - recipe show docker/express-js --command bat
+    - recipe show docker/express-js

@@ -362,7 +362,8 @@ recipe_link_usage() {
     echo
 
     printf "  %s\n" "--source, -s SOURCE"
-    printf "    Path to the directory containing the recipe script\n    It overwrites the RECIPE_DIR variable\n"
+    printf "    Path to the directory containing the recipe script\n"
+    printf "    Default: ${HOME}/.recipe\n"
     echo
 
     printf "  %s\n" "--help, -h"
@@ -374,13 +375,6 @@ recipe_link_usage() {
     printf "  %s\n" "PATH"
     printf "    Path to the symbolic link\n"
     printf "    Default: ${HOME}/.local/bin\n"
-    echo
-
-    printf "%s\n" "Environment Variables:"
-
-    printf "  %s\n" "RECIPE_DIR"
-    printf "    Directory containing the recipe script\n"
-    printf "    Default: ${HOME}/.recipe\n"
     echo
 
     printf "%s\n" "Examples:"
@@ -403,16 +397,12 @@ recipe_show_usage() {
   fi
 
   printf "%s\n" "Usage:"
-  printf "  recipe show [NAME] [OPTIONS]\n"
+  printf "  recipe show [NAME]\n"
   printf "  recipe show --help | -h\n"
   echo
 
   if [[ -n $long_usage ]]; then
     printf "%s\n" "Options:"
-
-    printf "  %s\n" "--command, -c EXECUTABLE"
-    printf "    Command used to print the recipe\n    It overwrites the RECIPE_SHOW_COMMAND variable\n"
-    echo
 
     printf "  %s\n" "--help, -h"
     printf "    Show this help\n"
@@ -427,13 +417,13 @@ recipe_show_usage() {
     printf "%s\n" "Environment Variables:"
 
     printf "  %s\n" "RECIPE_SHOW_COMMAND"
-    printf "    Executable used by the recipe show command\n"
+    printf "    Executable used to print the recipe\n"
     printf "    Default: cat\n"
     echo
 
     printf "%s\n" "Examples:"
     printf "  recipe show\n"
-    printf "  recipe show docker/express-js --command bat\n"
+    printf "  recipe show docker/express-js\n"
     echo
 
   fi
@@ -714,7 +704,7 @@ recipe_clone_command() {
 recipe_link_command() {
   local path="${args[path]}"
 
-  local source="${args[--source]:-${RECIPE_DIR}}"
+  local source="${args[--source]}"
   local remove="${args[--remove]}"
 
   if [[ -n "${remove}" ]]; then
@@ -751,14 +741,13 @@ recipe_link_command() {
 
 recipe_show_command() {
   local recipe="${args[name]}"
-  local command="${args[--command]:-${RECIPE_SHOW_COMMAND}}"
 
   [[ -z "${recipe}" ]] && recipe="$(filter_recipe)"
 
   # Full destination path to the recipe
   local destination_path="${RECIPE_BOOK_DIR}/${recipe}"
 
-  command ${command} "${destination_path}"
+  command ${RECIPE_SHOW_COMMAND} "${destination_path}"
 
 }
 
@@ -1320,8 +1309,6 @@ recipe_link_parse_requirements() {
     esac
   done
 
-  export RECIPE_DIR="${RECIPE_DIR:-${HOME}/.recipe}"
-
   action="link"
 
   while [[ $# -gt 0 ]]; do
@@ -1369,6 +1356,7 @@ recipe_link_parse_requirements() {
   done
 
   [[ -n ${args['path']:-} ]] || args['path']="${HOME}/.local/bin"
+  [[ -n ${args['--source']:-} ]] || args['--source']="${HOME}/.recipe"
 
 }
 
@@ -1396,19 +1384,6 @@ recipe_show_parse_requirements() {
   while [[ $# -gt 0 ]]; do
     key="$1"
     case "$key" in
-
-      --command | -c)
-
-        if [[ -n ${2+x} ]]; then
-
-          args['--command']="$2"
-          shift
-          shift
-        else
-          printf "%s\n" "--command requires an argument: --command, -c EXECUTABLE" >&2
-          exit 1
-        fi
-        ;;
 
       -?*)
         printf "invalid option: %s\n" "$key" >&2
