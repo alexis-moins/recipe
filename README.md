@@ -31,19 +31,22 @@
 
 ### Using recipe
 
-Clone the repository in the default location `~/.recipe`. Then, `cd` into the directory and run the following command:
 ```bash
-./recipe link
+# Clone the repository in the recommended location
+git clone git@github.com:alexis-moins/recipe.git ~/.recipe
+
+# Let recipe create the symbolic link for you!
+cd ~/.recipe && ./recipe link
 ```
 
-This command creates a symbolic link to the `recipe` script in the `~/.local/bin` directory. If you cloned the repository elsewhere, you may pass the repository path to the link command using the `--source` flag. Likewise, you can also change the link destination path with the optional `path` argument!
+The last command creates a symbolic link to the `recipe` script in the `~/.local/bin/` directory. If you cloned the repository elsewhere, you may pass the repository path to the link command using the `-s | --source` flag. Likewise, you can also change the link destination path with the optional `path` argument!
 ```bash
-./recipe link /usr/local/bin --source ~/scritps/recipe
+./recipe link /usr/local/bin/ --source ~/scritps/recipe
 ```
 
 ### Manually
 
-Clone the repository then move the [recipe](recipe) script to `/usr/local/bin/` or anywhere in your `PATH`, and make it executable.
+Clone the repository then move the [recipe](recipe) script to `~/.local/bin/` or anywhere in your `PATH`, and make it executable.
 
 ## Quick Start
 
