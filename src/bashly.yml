@@ -57,7 +57,7 @@ commands:
   - recipe git remote add origin <repo>
 
 - name: use
-  help: Use a recipe localy
+  help: Use a recipe locally
 
   args:
   - name: name

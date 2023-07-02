@@ -32,7 +32,7 @@ recipe_usage() {
   printf "  %s   Add a new recipe\n" "add   "
   printf "  %s   List all your recipes\n" "list  "
   printf "  %s   Access git from your recipe book\n" "git   "
-  printf "  %s   Use a recipe localy\n" "use   "
+  printf "  %s   Use a recipe locally\n" "use   "
   printf "  %s   Remove a recipe\n" "remove"
   printf "  %s   Edit a recipe\n" "edit  "
   printf "  %s   Clone a remote git repository\n" "clone "
@@ -178,11 +178,11 @@ recipe_git_usage() {
 
 recipe_use_usage() {
   if [[ -n $long_usage ]]; then
-    printf "recipe use - Use a recipe localy\n"
+    printf "recipe use - Use a recipe locally\n"
     echo
 
   else
-    printf "recipe use - Use a recipe localy\n"
+    printf "recipe use - Use a recipe locally\n"
     echo
 
   fi

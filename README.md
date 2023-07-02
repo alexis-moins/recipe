@@ -85,7 +85,7 @@ Commands:
   add      Add a new recipe
   list     List all your recipes
   git      Access git from your recipe book
-  use      Use a recipe localy
+  use      Use a recipe locally
   remove   Remove a recipe
   edit     Edit a recipe
   clone    Clone a remote git repository
