@@ -1,2 +1,1 @@
-ensure_recipe_book_not_empty
 find_recipe

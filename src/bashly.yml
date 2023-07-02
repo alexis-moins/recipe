@@ -11,10 +11,6 @@ environment_variables:
   help: Directories used to store recipes
   default: ${HOME}/recipe-book
 
-- name: recipe_source_dir
-  help: Directories containing the source repository
-  default: ${HOME}/.recipe
-
 dependencies:
 - git
 - fd
@@ -38,7 +34,7 @@ commands:
     validate: file_exists
 
   examples:
-    - recipe add work/Dockerfile.express
+    - recipe add docker/express-js
     - recipe add ssh-config -f ~/.ssh/config
 
 - name: list
@@ -149,3 +145,31 @@ commands:
       help: Directory containing the recipe script
       default: ${HOME}/.recipe
 
+  examples:
+    - recipe link /usr/local/bin
+    - recipe link --source ~/scripts/recipe --remove
+
+- name: show
+  help: Show the content of a recipe
+
+  args:
+    - name: name
+      help: Name of the recipe
+      validate: recipe_exists
+
+  flags:
+    - short: -c
+      long: --command
+      help: |-
+        Command used to print the recipe
+        It overwrites the RECIPE_SHOW_COMMAND variable
+      arg: executable
+
+  environment_variables:
+    - name: recipe_show_command
+      help: Executable used by the recipe show command
+      default: cat
+
+  examples:
+    - recipe show
+    - recipe show docker/express-js --command bat

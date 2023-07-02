@@ -37,6 +37,7 @@ recipe_usage() {
   printf "  %s   Edit a recipe\n" "edit  "
   printf "  %s   Clone a remote git repository\n" "clone "
   printf "  %s   Create a symbolic link to the recipe executable\n" "link  "
+  printf "  %s   Show the content of a recipe\n" "show  "
   echo
 
   if [[ -n $long_usage ]]; then
@@ -59,11 +60,6 @@ recipe_usage() {
     printf "  %s\n" "RECIPE_BOOK_DIR"
     printf "    Directories used to store recipes\n"
     printf "    Default: ${HOME}/recipe-book\n"
-    echo
-
-    printf "  %s\n" "RECIPE_SOURCE_DIR"
-    printf "    Directories containing the source repository\n"
-    printf "    Default: ${HOME}/.recipe\n"
     echo
 
   fi
@@ -103,7 +99,7 @@ recipe_add_usage() {
     echo
 
     printf "%s\n" "Examples:"
-    printf "  recipe add work/Dockerfile.express\n"
+    printf "  recipe add docker/express-js\n"
     printf "  recipe add ssh-config -f ~/.ssh/config\n"
     echo
 
@@ -387,6 +383,59 @@ recipe_link_usage() {
     printf "    Default: ${HOME}/.recipe\n"
     echo
 
+    printf "%s\n" "Examples:"
+    printf "  recipe link /usr/local/bin\n"
+    printf "  recipe link --source ~/scripts/recipe --remove\n"
+    echo
+
+  fi
+}
+
+recipe_show_usage() {
+  if [[ -n $long_usage ]]; then
+    printf "recipe show - Show the content of a recipe\n"
+    echo
+
+  else
+    printf "recipe show - Show the content of a recipe\n"
+    echo
+
+  fi
+
+  printf "%s\n" "Usage:"
+  printf "  recipe show [NAME] [OPTIONS]\n"
+  printf "  recipe show --help | -h\n"
+  echo
+
+  if [[ -n $long_usage ]]; then
+    printf "%s\n" "Options:"
+
+    printf "  %s\n" "--command, -c EXECUTABLE"
+    printf "    Command used to print the recipe\n    It overwrites the RECIPE_SHOW_COMMAND variable\n"
+    echo
+
+    printf "  %s\n" "--help, -h"
+    printf "    Show this help\n"
+    echo
+
+    printf "%s\n" "Arguments:"
+
+    printf "  %s\n" "NAME"
+    printf "    Name of the recipe\n"
+    echo
+
+    printf "%s\n" "Environment Variables:"
+
+    printf "  %s\n" "RECIPE_SHOW_COMMAND"
+    printf "    Executable used by the recipe show command\n"
+    printf "    Default: cat\n"
+    echo
+
+    printf "%s\n" "Examples:"
+    printf "  recipe show\n"
+    printf "  recipe show docker/express-js --command bat\n"
+    echo
+
   fi
 }
 
@@ -567,7 +616,6 @@ recipe_add_command() {
 }
 
 recipe_list_command() {
-  ensure_recipe_book_not_empty
   find_recipe
 
 }
@@ -635,7 +683,16 @@ recipe_edit_command() {
   # Directory in which the recipe will be stored
   local destination_dir="${RECIPE_BOOK_DIR}/${recipe_dir}"
 
-  $EDITOR "${destination_path}"
+  command $EDITOR "${destination_path}"
+
+  local changes="$(run_git diff --name-only "${destination_path}")"
+
+  if [[ -n "${changes}" ]]; then
+      run_git add "${destination_path}"
+
+      git_commit "feat: updated ${destination_path}"
+      echo "$(green ✔) Recipe updated"
+  fi
 
   clean_directory "${destination_dir}"
 
@@ -657,7 +714,7 @@ recipe_clone_command() {
 recipe_link_command() {
   local path="${args[path]}"
 
-  local source="${args[--source]}"
+  local source="${args[--source]:-${RECIPE_DIR}}"
   local remove="${args[--remove]}"
 
   if [[ -n "${remove}" ]]; then
@@ -674,7 +731,12 @@ recipe_link_command() {
           exit 1
       fi
 
-      source=`test -z "${source}" && echo "${RECIPE_DIR}" || realpath "${source}"`
+      if [[ ! -d "${source}" ]]; then
+          echo "$(red error: ) source directory $(magenta "${source}") does not exist"
+          exit 1
+      fi
+
+      source=`realpath "${source}"`
 
       if [[ ! -f "${source}/recipe" ]]; then
           echo "$(red error:) recipe script not found in $(magenta "${source}")"
@@ -684,6 +746,19 @@ recipe_link_command() {
       run_silent \ln -s "${source}/recipe" "${path}/recipe"
       echo "$(green ✔) Link created in $(magenta "${path}")"
   fi
+
+}
+
+recipe_show_command() {
+  local recipe="${args[name]}"
+  local command="${args[--command]:-${RECIPE_SHOW_COMMAND}}"
+
+  [[ -z "${recipe}" ]] && recipe="$(filter_recipe)"
+
+  # Full destination path to the recipe
+  local destination_path="${RECIPE_BOOK_DIR}/${recipe}"
+
+  command ${command} "${destination_path}"
 
 }
 
@@ -711,7 +786,6 @@ parse_requirements() {
 
   export EDITOR="${EDITOR:-vim}"
   export RECIPE_BOOK_DIR="${RECIPE_BOOK_DIR:-${HOME}/recipe-book}"
-  export RECIPE_SOURCE_DIR="${RECIPE_SOURCE_DIR:-${HOME}/.recipe}"
 
   if command -v git >/dev/null 2>&1; then
     deps['git']="$(command -v git | head -n1)"
@@ -792,6 +866,13 @@ parse_requirements() {
       action="link"
       shift
       recipe_link_parse_requirements "$@"
+      shift $#
+      ;;
+
+    show)
+      action="show"
+      shift
+      recipe_show_parse_requirements "$@"
       shift $#
       ;;
 
@@ -1291,6 +1372,72 @@ recipe_link_parse_requirements() {
 
 }
 
+recipe_show_parse_requirements() {
+
+  while [[ $# -gt 0 ]]; do
+    case "${1:-}" in
+      --help | -h)
+        long_usage=yes
+        recipe_show_usage
+        exit
+        ;;
+
+      *)
+        break
+        ;;
+
+    esac
+  done
+
+  export RECIPE_SHOW_COMMAND="${RECIPE_SHOW_COMMAND:-cat}"
+
+  action="show"
+
+  while [[ $# -gt 0 ]]; do
+    key="$1"
+    case "$key" in
+
+      --command | -c)
+
+        if [[ -n ${2+x} ]]; then
+
+          args['--command']="$2"
+          shift
+          shift
+        else
+          printf "%s\n" "--command requires an argument: --command, -c EXECUTABLE" >&2
+          exit 1
+        fi
+        ;;
+
+      -?*)
+        printf "invalid option: %s\n" "$key" >&2
+        exit 1
+        ;;
+
+      *)
+
+        if [[ -z ${args['name']+x} ]]; then
+
+          if [[ -n $(validate_recipe_exists "$1") ]]; then
+            printf "validation error in %s:\n%s\n" "NAME" "$(validate_recipe_exists "$1")" >&2
+            exit 1
+          fi
+
+          args['name']=$1
+          shift
+        else
+          printf "invalid argument: %s\n" "$key" >&2
+          exit 1
+        fi
+
+        ;;
+
+    esac
+  done
+
+}
+
 initialize() {
   version="0.1.0"
   long_usage=''
@@ -1298,7 +1445,6 @@ initialize() {
 
   export EDITOR="${EDITOR:-vim}"
   export RECIPE_BOOK_DIR="${RECIPE_BOOK_DIR:-${HOME}/recipe-book}"
-  export RECIPE_SOURCE_DIR="${RECIPE_SOURCE_DIR:-${HOME}/.recipe}"
 
   if [[ ! -d "${RECIPE_BOOK_DIR}/.git" ]]; then
       run_silent \mkdir "$RECIPE_BOOK_DIR"
@@ -1329,6 +1475,7 @@ run() {
     "edit") recipe_edit_command ;;
     "clone") recipe_clone_command ;;
     "link") recipe_link_command ;;
+    "show") recipe_show_command ;;
   esac
 }
 

@@ -1,6 +1,6 @@
 local path="${args[path]}"
 
-local source="${args[--source]}"
+local source="${args[--source]:-${RECIPE_DIR}}"
 local remove="${args[--remove]}"
 
 if [[ -n "${remove}" ]]; then
@@ -17,7 +17,12 @@ else
         exit 1
     fi
 
-    source=`test -z "${source}" && echo "${RECIPE_DIR}" || realpath "${source}"`
+    if [[ ! -d "${source}" ]]; then
+        echo "$(red error: ) source directory $(magenta "${source}") does not exist"
+        exit 1
+    fi
+
+    source=`realpath "${source}"`
 
     if [[ ! -f "${source}/recipe" ]]; then
         echo "$(red error:) recipe script not found in $(magenta "${source}")"
