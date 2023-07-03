@@ -72,6 +72,20 @@ recipe git remote add origin git@github.com:awesome-user/recipe-book
 recipe clone git@github.com:awesome-user/recipe-book
 ```
 
+## Templates
+
+A `template` is a recipe containing any number of special delimiter `{{ NAME }}`. Those delimiter enable you to write even more flexible recipes. Consider the following `docker/node` template file:
+```Dockerfile
+FROM node:{{ version }}
+
+RUN {{ step }}
+EXPOSE {{ port }}
+
+CMD {{ command }}
+```
+
+When running `recipe use docker/node -d Dockerfile`, you will be asked for values to replace the variables `version`, `step`, `port` and `command`. Once you're done, the final recipe will be added to you local directory.
+
 ## Usage
 
 ```
