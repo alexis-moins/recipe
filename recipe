@@ -517,6 +517,11 @@ blue_underlined() { print_in_color "\e[4;34m" "$*"; }
 magenta_underlined() { print_in_color "\e[4;35m" "$*"; }
 cyan_underlined() { print_in_color "\e[4;36m" "$*"; }
 
+confirm() {
+    local response=`gum input --prompt "${1} $(green "(yes/no)") "`
+    [[ "${response}" == "yes" ]] && return 0 || return 1
+}
+
 ensure_recipe_book_not_empty() {
     local candidates="$(find_recipe)"
 
@@ -624,11 +629,30 @@ recipe_use_command() {
 
   [[ -z "${destination}" ]] && destination="$(basename ${recipe})"
 
-  # TODO check if destination already exists
-  \cp -i "${RECIPE_BOOK_DIR}/${recipe}" "${destination}"
+  if [[ ! -f "${destination}" ]] || confirm "Overwrite ${destination}?"; then
+      local templates=`rg --only-matching "\{\{(.*)\}\}" --replace '$1' "${RECIPE_BOOK_DIR}/${recipe}"`
 
-  [[ -f "${destination}" ]] && \
-      echo "$(green ✔) Your recipe is ready to use."
+      if [[ -z "${templates}" ]]; then
+          \cp -f "${RECIPE_BOOK_DIR}/${recipe}" "${destination}"
+          echo "$(green ✔) Your recipe is ready to use."
+      else
+          local expression=""
+
+          for template in ${templates}; do
+              [[ -n "${expression}" ]] && expression+=";"
+              local response=`gum input --prompt "${template}: "`
+
+              [[ -z "${response}" ]] && exit 1
+
+              echo "${template}: $(cyan ${response})"
+
+              expression+="s/{{ ${template} }}/${response}/"
+          done
+
+          sed "${expression}" "${RECIPE_BOOK_DIR}/${recipe}" > "${destination}"
+          echo -e "\n$(green ✔) Your recipe is ready to use."
+      fi
+  fi
 
 }
 
@@ -647,7 +671,7 @@ recipe_remove_command() {
   # Directory in which the recipe will be stored
   local destination_dir="${RECIPE_BOOK_DIR}/${recipe_dir}"
 
-  if [[ -n "${auto_confirm}" ]] || gum confirm "Remove recipe?"; then
+  if [[ -n "${auto_confirm}" ]] || confirm "Remove recipe?"; then
       \rm "${destination_path}"
 
       clean_directory "${destination_dir}"

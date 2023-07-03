@@ -12,7 +12,7 @@ local destination_path="${RECIPE_BOOK_DIR}/${recipe}"
 # Directory in which the recipe will be stored
 local destination_dir="${RECIPE_BOOK_DIR}/${recipe_dir}"
 
-if [[ -n "${auto_confirm}" ]] || gum confirm "Remove recipe?"; then
+if [[ -n "${auto_confirm}" ]] || confirm "Remove recipe?"; then
     \rm "${destination_path}"
 
     clean_directory "${destination_dir}"
