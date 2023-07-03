@@ -3,167 +3,204 @@ help: Store files/templates in a recipe book to use them anytime, anywhere
 version: 0.1.0
 
 environment_variables:
-- name: editor
-  help: Editor to use for interactive commands
-  default: vim
+  - name: editor
+    help: Editor to use for interactive commands
+    default: vim
 
-- name: recipe_book_dir
-  help: Directories used to store recipes
-  default: ${HOME}/recipe-book
+  - name: recipe_book_dir
+    help: Directories used to store recipes
+    default: ${HOME}/recipe-book
 
 dependencies:
-- git
-- fd
-- gum
+  - git
+  - fd
+  - gum
+  - rg
 
 commands:
-- name: add
-  help: Add a new recipe
+  - name: init
+    help: Create and setup a new recipe book
 
-  args:
-  - name: name
-    required: true
-    help: Name of the new recipe
-    validate: recipe_missing
+    flags:
+      - short: -y
+        long: --yes
+        help: Do not ask for confirmation
 
-  flags:
-    - long: --from
-      short: -f
-      arg: file
-      help: Use the following file for this recipe
-      validate: file_exists
+    examples:
+      - recipe init
+      - recipe init -y
 
-    - long: --edit
-      short: -e
-      help: Edit the recipe once it has been added
+  - name: doctor
+    help: Check your recipe book for potential problems
 
-  examples:
-    - recipe add docker/express-js
-    - recipe add ssh-config -f ~/.ssh/config
+    examples:
+      - recipe doctor
 
-- name: list
-  alias: ls
-  help: List all your recipes
+  - name: add
+    help: Add a new recipe
 
-  examples:
-  - recipe list
+    filters:
+      - recipe_book_ready
 
-- name: git
-  help: Access git from your recipe book
+    args:
+      - name: name
+        required: true
+        help: Name of the new recipe
+        validate: recipe_missing
 
-  catch_all:
-    label: COMMAND
-    help: Command to run inside the recipe book
-    required: true
+    flags:
+      - long: --from
+        short: -f
+        arg: file
+        help: Use the following file for this recipe
+        validate: file_exists
 
-  examples:
-  - recipe git log
-  - recipe git remote add origin <repo>
+      - long: --edit
+        short: -e
+        help: Edit the recipe once it has been added
 
-- name: use
-  help: Use a recipe locally
+    examples:
+      - recipe add docker/express-js
+      - recipe add ssh-config -f ~/.ssh/config
 
-  args:
-  - name: name
-    help: Name of the recipe
-    validate: recipe_exists
+  - name: list
+    alias: ls
+    help: List all your recipes
 
-  flags:
-  - short: -d
-    long: --destination
-    arg: destination
-    help: Destination path for the recipe
+    filters:
+      - recipe_book_ready
 
-  examples:
-  - recipe use
-  - recipe use ssh-config -d ~/.ssh/config
+    examples:
+      - recipe list
 
-- name: remove
-  alias: rm
-  help: Remove a recipe
+  - name: git
+    help: Access git from your recipe book
 
-  args:
-    - name: name
-      help: Name of the recipe to remove
-      validate: recipe_exists
-
-  flags:
-    - short: -y
-      long: --yes
-      help: Do not ask for confirmation
-
-  examples:
-    - recipe remove
-    - recipe remove ssh-config --yes
-
-- name: edit
-  help: Edit a recipe
-
-  args:
-    - name: name
-      help: Name of the recipe to edit
-      validate: recipe_exists
-
-  examples:
-    - recipe edit
-    - recipe edit ssh-config
-
-- name: clone
-  help: Clone a remote git repository
-
-  args:
-    - name: url
-      help: Remote repository url
+    catch_all:
+      label: COMMAND
+      help: Command to run inside the recipe book
       required: true
 
-  flags:
-    - short: -y
-      long: --yes
-      help: Do not ask for confirmation
+    examples:
+      - recipe git log
+      - recipe git remote add origin <repo>
 
-  examples:
-    - 'recipe clone git@github:awesome-user/recipe-book.git --yes'
+  - name: use
+    help: Use a recipe locally
 
-- name: link
-  help: Create a symbolic link to the recipe script
+    filters:
+      - recipe_book_ready
 
-  args:
-    - name: path
-      help: Path to the symbolic link
-      default: ${HOME}/.local/bin
+    args:
+      - name: name
+        help: Name of the recipe
+        validate: recipe_exists
 
-  flags:
-    - short: -r
-      long: --remove
-      help: Remove the symbolic link instead
+    flags:
+      - short: -d
+        long: --destination
+        arg: destination
+        help: Destination path for the recipe
 
-    - short: -s
-      long: --source
-      arg: source
-      default: ${HOME}/.recipe
-      help: Path to the directory containing the recipe script
+    examples:
+      - recipe use
+      - recipe use ssh-config -d ~/.ssh/config
 
-    - short: -c
-      long: --copy
-      help: Copy the script instead of creating a symbolic link
+  - name: remove
+    alias: rm
+    help: Remove a recipe
 
-  examples:
-    - recipe link /usr/local/bin
-    - recipe link --source ~/scripts/recipe --remove
+    filters:
+      - recipe_book_ready
 
-- name: show
-  help: Show the content of a recipe
+    args:
+      - name: name
+        help: Name of the recipe to remove
+        validate: recipe_exists
 
-  args:
-    - name: name
-      help: Name of the recipe
-      validate: recipe_exists
+    flags:
+      - short: -y
+        long: --yes
+        help: Do not ask for confirmation
 
-  environment_variables:
-    - name: recipe_show_command
-      help: Executable used to print the recipe
-      default: cat
+    examples:
+      - recipe remove
+      - recipe remove ssh-config --yes
 
-  examples:
-    - recipe show
-    - recipe show docker/express-js
+  - name: edit
+    help: Edit a recipe
+
+    filters:
+      - recipe_book_ready
+
+    args:
+      - name: name
+        help: Name of the recipe to edit
+        validate: recipe_exists
+
+    examples:
+      - recipe edit
+      - recipe edit ssh-config
+
+  - name: clone
+    help: Clone a remote git repository
+
+    args:
+      - name: url
+        help: Remote repository url
+        required: true
+
+    flags:
+      - short: -y
+        long: --yes
+        help: Do not ask for confirmation
+
+    examples:
+      - 'recipe clone git@github:awesome-user/recipe-book.git --yes'
+
+  - name: link
+    help: Create a symbolic link to the recipe script
+
+    args:
+      - name: path
+        help: Path to the symbolic link
+        default: ${HOME}/.local/bin
+
+    flags:
+      - short: -r
+        long: --remove
+        help: Remove the symbolic link instead
+
+      - short: -s
+        long: --source
+        arg: source
+        default: ${HOME}/.recipe
+        help: Path to the directory containing the recipe script
+
+      - short: -c
+        long: --copy
+        help: Copy the script instead of creating a symbolic link
+
+    examples:
+      - recipe link /usr/local/bin
+      - recipe link --source ~/scripts/recipe --remove
+
+  - name: show
+    help: Show the content of a recipe
+
+    filters:
+      - recipe_book_ready
+
+    args:
+      - name: name
+        help: Name of the recipe
+        validate: recipe_exists
+
+    environment_variables:
+      - name: recipe_show_command
+        help: Executable used to print the recipe
+        default: cat
+
+    examples:
+      - recipe show
+      - recipe show docker/express-js

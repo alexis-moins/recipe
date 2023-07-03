@@ -22,8 +22,9 @@
 ## Prerequisites
 
 - bash 4.0 or higher
-- [gum](https://github.com/charmbracelet/gum) for interactive commands
+- [gum](https://github.com/charmbracelet/gum)
 - [fd](https://github.com/sharkdp/fd)
+- [rg](https://github.com/BurntSushi/ripgrep)
 - git
 
 
@@ -53,23 +54,29 @@ Clone the repository then move the [recipe](recipe) script to `~/.local/bin/` or
 After installing, you can follow these steps to quickly see how it works:
 
 ```bash
-# Add a recipe
+# First initialize a new recipe book
+recipe init
+
+# Or, if you already have a recipe book
+recipe clone git@github.com:awesome-user/recipe-book
+
+# You can add a recipe
 recipe add docker/express-js --from Dockerfile
 
-# View list of recipes
+# View the list of your recipes
 recipe list
+
+# Check you recipe book at any time
+recipe doctor
 
 # Edit a recipe
 recipe edit docker/express-js
 
-# Use a recipe in another project
+# Even use a recipe in another project
 recipe use docker/express-js --destination Dockerfile
 
 # Optionally, you can add a remote repository to sync your recipe book across devices
 recipe git remote add origin git@github.com:awesome-user/recipe-book
-
-# Or, if you already have a recipe book
-recipe clone git@github.com:awesome-user/recipe-book
 ```
 
 ## Templates
@@ -99,6 +106,8 @@ Usage:
   recipe --version | -v
 
 Commands:
+  init     Create and setup a new recipe book
+  doctor   Check your recipe book for potential problems
   add      Add a new recipe
   list     List all your recipes
   git      Access git from your recipe book

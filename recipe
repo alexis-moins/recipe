@@ -29,6 +29,8 @@ recipe_usage() {
   echo
 
   printf "%s\n" "Commands:"
+  printf "  %s   Create and setup a new recipe book\n" "init  "
+  printf "  %s   Check your recipe book for potential problems\n" "doctor"
   printf "  %s   Add a new recipe\n" "add   "
   printf "  %s   List all your recipes\n" "list  "
   printf "  %s   Access git from your recipe book\n" "git   "
@@ -60,6 +62,71 @@ recipe_usage() {
     printf "  %s\n" "RECIPE_BOOK_DIR"
     printf "    Directories used to store recipes\n"
     printf "    Default: ${HOME}/recipe-book\n"
+    echo
+
+  fi
+}
+
+recipe_init_usage() {
+  if [[ -n $long_usage ]]; then
+    printf "recipe init - Create and setup a new recipe book\n"
+    echo
+
+  else
+    printf "recipe init - Create and setup a new recipe book\n"
+    echo
+
+  fi
+
+  printf "%s\n" "Usage:"
+  printf "  recipe init [OPTIONS]\n"
+  printf "  recipe init --help | -h\n"
+  echo
+
+  if [[ -n $long_usage ]]; then
+    printf "%s\n" "Options:"
+
+    printf "  %s\n" "--yes, -y"
+    printf "    Do not ask for confirmation\n"
+    echo
+
+    printf "  %s\n" "--help, -h"
+    printf "    Show this help\n"
+    echo
+
+    printf "%s\n" "Examples:"
+    printf "  recipe init\n"
+    printf "  recipe init -y\n"
+    echo
+
+  fi
+}
+
+recipe_doctor_usage() {
+  if [[ -n $long_usage ]]; then
+    printf "recipe doctor - Check your recipe book for potential problems\n"
+    echo
+
+  else
+    printf "recipe doctor - Check your recipe book for potential problems\n"
+    echo
+
+  fi
+
+  printf "%s\n" "Usage:"
+  printf "  recipe doctor\n"
+  printf "  recipe doctor --help | -h\n"
+  echo
+
+  if [[ -n $long_usage ]]; then
+    printf "%s\n" "Options:"
+
+    printf "  %s\n" "--help, -h"
+    printf "    Show this help\n"
+    echo
+
+    printf "%s\n" "Examples:"
+    printf "  recipe doctor\n"
     echo
 
   fi
@@ -526,7 +593,7 @@ magenta_underlined() { print_in_color "\e[4;35m" "$*"; }
 cyan_underlined() { print_in_color "\e[4;36m" "$*"; }
 
 confirm() {
-    local response=`gum input --prompt "${1} $(green "(yes/no [no])") " --placeholder "type a valid option"`
+    local response=`gum input --prompt "${1} $(green "(yes/no [no])") " --placeholder ""`
     [[ "${response}" == "yes" ]] && return 0 || return 1
 }
 
@@ -544,12 +611,21 @@ filter_recipe() {
     echo "${recipes}" | gum filter --placeholder "Select a recipe..."
 }
 
+filter_recipe_book_ready() {
+    if ! recipe_doctor_command &> /dev/null; then
+        echo "$(yellow info:) your recipe book is not ready yet"
+        echo "$(yellow info:) consider running $(yellow_underlined recipe doctor)"
+    fi
+}
+
 find_recipe() {
     run_silent pushd "${RECIPE_BOOK_DIR}"
-    local recipes="$(\fd --color never --hidden --type file .)"
+    local recipes=`\fd --exclude='.gitignore' -c='never' -H -t=f`
 
     run_silent popd
-    echo "${recipes}"
+    if [[ -n "${recipes}" ]]; then
+        echo "${recipes}"
+    fi
 }
 
 git_commit() {
@@ -581,11 +657,78 @@ validate_not_empty() {
 }
 
 validate_recipe_exists() {
-    [[ -f "${RECIPE_BOOK_DIR:-${HOME}/recipe-book}/$1" ]] || echo "must be an existing recipe"
+    [[ -f "${RECIPE_BOOK_DIR}/$1" ]] || echo "must be an existing recipe"
 }
 
 validate_recipe_missing() {
     [[ ! -f "${RECIPE_BOOK_DIR:-${HOME}/recipe-book}/$1" ]] || echo "Your recipe book already contains that recipe."
+}
+
+recipe_init_command() {
+  local auto_confirm="${args[--yes]}"
+
+  if [[ -d "${RECIPE_BOOK_DIR}" ]]; then
+
+      if [[ -n "${auto_confirm}" ]] || confirm "Overwrite current recipe book ?"; then
+          \rm -rf "${RECIPE_BOOK_DIR}"
+      else
+          exit 1
+      fi
+  fi
+
+  \mkdir "${RECIPE_BOOK_DIR}"
+
+  run_silent pushd "${RECIPE_BOOK_DIR}"
+
+  run_silent git init
+
+  echo '.templates/' > ".gitignore"
+
+  run_git add .gitignore
+  git_commit "feat: initial commit"
+
+  echo -e "$(green ✔) Initialized recipe book"
+
+  \mkdir .templates
+  run_silent popd
+
+}
+
+recipe_doctor_command() {
+  local error=""
+
+  if [[ ! -d "${RECIPE_BOOK_DIR}" ]]; then
+      echo "$(yellow info:) your recipe book is missing at ${RECIPE_BOOK_DIR}"
+      echo "$(yellow info:) consider running $(yellow_underlined recipe init)"
+
+      error="yes"
+  fi
+
+  if [[ ! -d "${RECIPE_BOOK_DIR}/.git" ]]; then
+      [[ -n "${error}" ]] && echo "" || error="yes"
+
+      echo "$(yellow info:) your recipe book is not a git repository"
+      echo "$(yellow info:) consider running $(yellow_underlined recipe init)"
+  fi
+
+  if [[ ! -d "${RECIPE_BOOK_DIR}/.templates" ]]; then
+      [[ -n "${error}" ]] && echo "" || error="yes"
+
+      echo "$(yellow info:) your recipe book is missing the .templates directory"
+      echo "$(yellow info:) consider running $(yellow_underlined mkdir ${RECIPE_BOOK_DIR}/.templates)"
+  fi
+
+  if [[ ! -f "${RECIPE_BOOK_DIR}/.gitignore" ]] || ! run_silent \rg -e '^\.templates[/]?$' "${RECIPE_BOOK_DIR}/.gitignore"; then
+      [[ -n "${error}" ]] && echo "" || error="yes"
+
+      echo "$(yellow info:) your recipe book should ignore the .templates directory"
+      echo "$(yellow info:) consider adding a $(yellow_underlined .gitignore) file"
+  fi
+
+  if [[ -n "${error}" ]]; then
+      return 1
+  fi
+
 }
 
 recipe_add_command() {
@@ -729,10 +872,10 @@ recipe_clone_command() {
   local url="${args[url]}"
   local auto_confirm="${args[--yes]}"
 
-  if [[ -n "${auto_confirm}" ]] || confirm "Overwrite current recipe book?"; then
-      run_silent rm -rf "${RECIPE_BOOK_DIR}"
-      git clone "${url}" "${RECIPE_BOOK_DIR}"
+  if [[ ! -d "${RECIPE_BOOK_DIR}" ]] || [[ -n "${auto_confirm}" ]] || confirm "Overwrite current recipe book?"; then
+      [[ -d "${RECIPE_BOOK_DIR}" ]] && \rm -rf "${RECIPE_BOOK_DIR}"
 
+      git clone "${url}" "${RECIPE_BOOK_DIR}"
       echo "$(green ✔) Your recipe book is ready"
   fi
 
@@ -838,10 +981,31 @@ parse_requirements() {
     exit 1
   fi
 
+  if command -v rg >/dev/null 2>&1; then
+    deps['rg']="$(command -v rg | head -n1)"
+  else
+    printf "missing dependency: rg\n" >&2
+    exit 1
+  fi
+
   action=${1:-}
 
   case $action in
     -*) ;;
+
+    init)
+      action="init"
+      shift
+      recipe_init_parse_requirements "$@"
+      shift $#
+      ;;
+
+    doctor)
+      action="doctor"
+      shift
+      recipe_doctor_parse_requirements "$@"
+      shift $#
+      ;;
 
     add)
       action="add"
@@ -917,6 +1081,92 @@ parse_requirements() {
       ;;
 
   esac
+
+  while [[ $# -gt 0 ]]; do
+    key="$1"
+    case "$key" in
+
+      -?*)
+        printf "invalid option: %s\n" "$key" >&2
+        exit 1
+        ;;
+
+      *)
+
+        printf "invalid argument: %s\n" "$key" >&2
+        exit 1
+
+        ;;
+
+    esac
+  done
+
+}
+
+recipe_init_parse_requirements() {
+
+  while [[ $# -gt 0 ]]; do
+    case "${1:-}" in
+      --help | -h)
+        long_usage=yes
+        recipe_init_usage
+        exit
+        ;;
+
+      *)
+        break
+        ;;
+
+    esac
+  done
+
+  action="init"
+
+  while [[ $# -gt 0 ]]; do
+    key="$1"
+    case "$key" in
+
+      --yes | -y)
+
+        args['--yes']=1
+        shift
+        ;;
+
+      -?*)
+        printf "invalid option: %s\n" "$key" >&2
+        exit 1
+        ;;
+
+      *)
+
+        printf "invalid argument: %s\n" "$key" >&2
+        exit 1
+
+        ;;
+
+    esac
+  done
+
+}
+
+recipe_doctor_parse_requirements() {
+
+  while [[ $# -gt 0 ]]; do
+    case "${1:-}" in
+      --help | -h)
+        long_usage=yes
+        recipe_doctor_usage
+        exit
+        ;;
+
+      *)
+        break
+        ;;
+
+    esac
+  done
+
+  action="doctor"
 
   while [[ $# -gt 0 ]]; do
     key="$1"
@@ -1017,6 +1267,12 @@ recipe_add_parse_requirements() {
     exit 1
   fi
 
+  filter_error=$(filter_recipe_book_ready)
+  if [[ -n $filter_error ]]; then
+    echo "$filter_error" >&2
+    exit 1
+  fi
+
 }
 
 recipe_list_parse_requirements() {
@@ -1056,6 +1312,12 @@ recipe_list_parse_requirements() {
 
     esac
   done
+
+  filter_error=$(filter_recipe_book_ready)
+  if [[ -n $filter_error ]]; then
+    echo "$filter_error" >&2
+    exit 1
+  fi
 
 }
 
@@ -1172,6 +1434,12 @@ recipe_use_parse_requirements() {
     esac
   done
 
+  filter_error=$(filter_recipe_book_ready)
+  if [[ -n $filter_error ]]; then
+    echo "$filter_error" >&2
+    exit 1
+  fi
+
 }
 
 recipe_remove_parse_requirements() {
@@ -1229,6 +1497,12 @@ recipe_remove_parse_requirements() {
     esac
   done
 
+  filter_error=$(filter_recipe_book_ready)
+  if [[ -n $filter_error ]]; then
+    echo "$filter_error" >&2
+    exit 1
+  fi
+
 }
 
 recipe_edit_parse_requirements() {
@@ -1279,6 +1553,12 @@ recipe_edit_parse_requirements() {
 
     esac
   done
+
+  filter_error=$(filter_recipe_book_ready)
+  if [[ -n $filter_error ]]; then
+    echo "$filter_error" >&2
+    exit 1
+  fi
 
 }
 
@@ -1464,6 +1744,12 @@ recipe_show_parse_requirements() {
     esac
   done
 
+  filter_error=$(filter_recipe_book_ready)
+  if [[ -n $filter_error ]]; then
+    echo "$filter_error" >&2
+    exit 1
+  fi
+
 }
 
 initialize() {
@@ -1474,15 +1760,27 @@ initialize() {
   export EDITOR="${EDITOR:-vim}"
   export RECIPE_BOOK_DIR="${RECIPE_BOOK_DIR:-${HOME}/recipe-book}"
 
-  if [[ ! -d "${RECIPE_BOOK_DIR}/.git" ]]; then
-      run_silent mkdir "$RECIPE_BOOK_DIR"
-      run_silent pushd "$RECIPE_BOOK_DIR"
+  # [[ ! -d "${RECIPE_BOOK_DIR}" ]] && \mkdir "${RECIPE_BOOK_DIR}"
 
-      run_silent git init
-      run_silent popd
+  # if [[ ! -d "${RECIPE_BOOK_DIR}/.git" ]]; then
+  #     run_silent pushd "$RECIPE_BOOK_DIR"
 
-      echo "$(green ✔) Initialized recipe book."
-  fi
+  #     run_silent git init
+  #     run_silent popd
+
+  #     echo "$(green ✔) Initialized recipe book."
+  # fi
+
+  # if [[ ! -f "${RECIPE_BOOK_DIR}/.gitignore" ]] || ! grep '.templates' "${RECIPE_BOOK_DIR}/.gitignore"; then
+  #     echo ".templates/" >> "${RECIPE_BOOK_DIR}/.gitignore"
+
+  #     run_git add .gitignore
+  #     git_commit "feat: added .gitignore"
+
+  #     echo -e "$(green ✔) Added templates\n"
+  # fi
+
+  # [[ ! -d "${RECIPE_BOOK_DIR}/.templates" ]] && \mkdir "${RECIPE_BOOK_DIR}/.templates"
 
 }
 
@@ -1495,6 +1793,8 @@ run() {
   parse_requirements "${input[@]}"
 
   case "$action" in
+    "init") recipe_init_command ;;
+    "doctor") recipe_doctor_command ;;
     "add") recipe_add_command ;;
     "list") recipe_list_command ;;
     "git") recipe_git_command ;;

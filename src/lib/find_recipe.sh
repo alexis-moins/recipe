@@ -1,7 +1,9 @@
 find_recipe() {
     run_silent pushd "${RECIPE_BOOK_DIR}"
-    local recipes="$(\fd --color never --hidden --type file .)"
+    local recipes=`\fd --exclude='.gitignore' -c='never' -H -t=f`
 
     run_silent popd
-    echo "${recipes}"
+    if [[ -n "${recipes}" ]]; then
+        echo "${recipes}"
+    fi
 }
