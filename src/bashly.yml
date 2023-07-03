@@ -27,11 +27,15 @@ commands:
     validate: recipe_missing
 
   flags:
-  - long: --from
-    short: -f
-    arg: file
-    help: Use the following file for this recipe
-    validate: file_exists
+    - long: --from
+      short: -f
+      arg: file
+      help: Use the following file for this recipe
+      validate: file_exists
+
+    - long: --edit
+      short: -e
+      help: Edit the recipe once it has been added
 
   examples:
     - recipe add docker/express-js
@@ -121,7 +125,7 @@ commands:
     - 'recipe clone git@github:awesome-user/recipe-book.git --yes'
 
 - name: link
-  help: Create a symbolic link to the recipe executable
+  help: Create a symbolic link to the recipe script
 
   args:
     - name: path
@@ -138,6 +142,10 @@ commands:
       arg: source
       default: ${HOME}/.recipe
       help: Path to the directory containing the recipe script
+
+    - short: -c
+      long: --copy
+      help: Copy the script instead of creating a symbolic link
 
   examples:
     - recipe link /usr/local/bin

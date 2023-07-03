@@ -13,7 +13,7 @@ local destination_path="${RECIPE_BOOK_DIR}/${recipe}"
 local destination_dir="${RECIPE_BOOK_DIR}/${recipe_dir}"
 
 if [[ -n "${auto_confirm}" ]] || confirm "Remove recipe?"; then
-    \rm "${destination_path}"
+    run_silent rm "${destination_path}"
 
     clean_directory "${destination_dir}"
 

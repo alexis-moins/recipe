@@ -17,7 +17,7 @@ if [[ ! -f "${destination}" ]] || confirm "Overwrite ${destination}?"; then
 
         for template in ${templates}; do
             [[ -n "${expression}" ]] && expression+=";"
-            local response=`gum input --prompt "${template}: "`
+            local response=`gum input --prompt "${template}: " --placeholder "something"`
 
             [[ -z "${response}" ]] && exit 1
 

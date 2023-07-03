@@ -1,5 +1,5 @@
 if [[ ! -d "${RECIPE_BOOK_DIR}/.git" ]]; then
-    run_silent \mkdir "$RECIPE_BOOK_DIR"
+    run_silent mkdir "$RECIPE_BOOK_DIR"
     run_silent pushd "$RECIPE_BOOK_DIR"
 
     run_silent git init

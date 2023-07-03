@@ -36,7 +36,7 @@ recipe_usage() {
   printf "  %s   Remove a recipe\n" "remove"
   printf "  %s   Edit a recipe\n" "edit  "
   printf "  %s   Clone a remote git repository\n" "clone "
-  printf "  %s   Create a symbolic link to the recipe executable\n" "link  "
+  printf "  %s   Create a symbolic link to the recipe script\n" "link  "
   printf "  %s   Show the content of a recipe\n" "show  "
   echo
 
@@ -86,6 +86,10 @@ recipe_add_usage() {
 
     printf "  %s\n" "--from, -f FILE"
     printf "    Use the following file for this recipe\n"
+    echo
+
+    printf "  %s\n" "--edit, -e"
+    printf "    Edit the recipe once it has been added\n"
     echo
 
     printf "  %s\n" "--help, -h"
@@ -340,11 +344,11 @@ recipe_clone_usage() {
 
 recipe_link_usage() {
   if [[ -n $long_usage ]]; then
-    printf "recipe link - Create a symbolic link to the recipe executable\n"
+    printf "recipe link - Create a symbolic link to the recipe script\n"
     echo
 
   else
-    printf "recipe link - Create a symbolic link to the recipe executable\n"
+    printf "recipe link - Create a symbolic link to the recipe script\n"
     echo
 
   fi
@@ -364,6 +368,10 @@ recipe_link_usage() {
     printf "  %s\n" "--source, -s SOURCE"
     printf "    Path to the directory containing the recipe script\n"
     printf "    Default: ${HOME}/.recipe\n"
+    echo
+
+    printf "  %s\n" "--copy, -c"
+    printf "    Copy the script instead of creating a symbolic link\n"
     echo
 
     printf "  %s\n" "--help, -h"
@@ -482,7 +490,7 @@ inspect_args() {
 
 clean_directory() {
     if [[ -d "${1}" ]] && [[ -z "$(ls -A "${1}")" ]]; then
-        run_silent \rmdir "${1}"
+        run_silent rmdir "${1}"
     fi
 }
 
@@ -518,7 +526,7 @@ magenta_underlined() { print_in_color "\e[4;35m" "$*"; }
 cyan_underlined() { print_in_color "\e[4;36m" "$*"; }
 
 confirm() {
-    local response=`gum input --prompt "${1} $(green "(yes/no)") "`
+    local response=`gum input --prompt "${1} $(green "(yes/no [no])") " --placeholder "type a valid option"`
     [[ "${response}" == "yes" ]] && return 0 || return 1
 }
 
@@ -553,7 +561,7 @@ run_git() {
 }
 
 run_silent() {
-  ${@} &> /dev/null
+  command ${@} &> /dev/null
 }
 
 validate_dir_exists() {
@@ -581,8 +589,10 @@ validate_recipe_missing() {
 }
 
 recipe_add_command() {
-  local recipe=${args['name']}
-  local file=${args['--from']}
+  local recipe="${args[name]}"
+
+  local file="${args[--from]}"
+  local edit="${args[--edit]}"
 
   local recipe_dir="$(dirname ${recipe})"
 
@@ -592,11 +602,15 @@ recipe_add_command() {
   # Directory in which the recipe will be stored
   local destination_dir="${RECIPE_BOOK_DIR}/${recipe_dir}"
 
+  # Create intermediary directories if needed
   if [[ -n "${recipe_dir}" ]] && [[ ! -d "${destination_dir}" ]]; then
-      run_silent \mkdir "${destination_dir}"
+      run_silent mkdir "${destination_dir}"
   fi
 
-  [[ -n ${file} ]] && \cp ${file} "${destination_path}" || ${EDITOR} "${destination_path}"
+  [[ -n "${file}" ]] && \cp ${file} "${destination_path}"
+
+  # Edit the file if no --from flags was passed or if the --edit flag was passed
+  [[ -z "${file}" ]] || [[ -n "${edit}" ]] && ${EDITOR} "${destination_path}"
 
   if [[ -f "${destination_path}" ]]; then
       run_git add "${recipe}"
@@ -605,7 +619,6 @@ recipe_add_command() {
       echo "$(green ✔) New recipe added"
   else
       clean_directory "${destination_dir}"
-      echo "The recipe was not added to your recipe book"
   fi
 
 }
@@ -640,7 +653,7 @@ recipe_use_command() {
 
           for template in ${templates}; do
               [[ -n "${expression}" ]] && expression+=";"
-              local response=`gum input --prompt "${template}: "`
+              local response=`gum input --prompt "${template}: " --placeholder "something"`
 
               [[ -z "${response}" ]] && exit 1
 
@@ -672,7 +685,7 @@ recipe_remove_command() {
   local destination_dir="${RECIPE_BOOK_DIR}/${recipe_dir}"
 
   if [[ -n "${auto_confirm}" ]] || confirm "Remove recipe?"; then
-      \rm "${destination_path}"
+      run_silent rm "${destination_path}"
 
       clean_directory "${destination_dir}"
 
@@ -717,7 +730,7 @@ recipe_clone_command() {
   local auto_confirm="${args[--yes]}"
 
   if [[ -n "${auto_confirm}" ]] || "${deps[gum]}" confirm "Overwrite current recipe book?"; then
-      run_silent \rm -rf "${RECIPE_BOOK_DIR}"
+      run_silent rm -rf "${RECIPE_BOOK_DIR}"
       git clone "${url}" "${RECIPE_BOOK_DIR}"
 
       echo "$(green ✔) Your recipe book is ready"
@@ -730,34 +743,37 @@ recipe_link_command() {
 
   local source="${args[--source]}"
   local remove="${args[--remove]}"
+  local copy="${args[--copy]}"
 
   if [[ -n "${remove}" ]]; then
-      if [[ -L "${path}/recipe" ]]; then
-          run_silent \rm -rf "${path}/recipe"
+      if [[ -f "${path}/recipe" ]]; then
+          run_silent rm -rf "${path}/recipe"
           echo "$(green ✔) Link removed from $(magenta "${path}")"
       else
-          echo "$(red error:) no link was found in $(magenta "${path}")"
+          echo "No link found in $(magenta "${path}")"
           exit 1
       fi
   else
-      if [[ -L "${path}/recipe" ]]; then
-          echo "$(red error:) there is already a link in $(magenta "${path}")"
+      if [[ -f "${path}/recipe" ]]; then
+          echo "There is already a link in $(magenta "${path}")"
           exit 1
       fi
 
       if [[ ! -d "${source}" ]]; then
-          echo "$(red error: ) source directory $(magenta "${source}") does not exist"
+          echo "Source directory $(magenta "${source}") does not exist"
           exit 1
       fi
 
       source=`realpath "${source}"`
 
       if [[ ! -f "${source}/recipe" ]]; then
-          echo "$(red error:) recipe script not found in $(magenta "${source}")"
+          echo "Script 'recipe' not found in $(magenta "${source}")"
           exit 1
       fi
 
-      run_silent \ln -s "${source}/recipe" "${path}/recipe"
+      local executable=`test -n "${copy}" && echo "cp" || echo "ln -s"`
+
+      run_silent ${executable} "${source}/recipe" "${path}/recipe"
       echo "$(green ✔) Link created in $(magenta "${path}")"
   fi
 
@@ -961,6 +977,12 @@ recipe_add_parse_requirements() {
           printf "%s\n" "--from requires an argument: --from, -f FILE" >&2
           exit 1
         fi
+        ;;
+
+      --edit | -e)
+
+        args['--edit']=1
+        shift
         ;;
 
       -?*)
@@ -1358,6 +1380,12 @@ recipe_link_parse_requirements() {
         fi
         ;;
 
+      --copy | -c)
+
+        args['--copy']=1
+        shift
+        ;;
+
       -?*)
         printf "invalid option: %s\n" "$key" >&2
         exit 1
@@ -1446,7 +1474,7 @@ initialize() {
   export RECIPE_BOOK_DIR="${RECIPE_BOOK_DIR:-${HOME}/recipe-book}"
 
   if [[ ! -d "${RECIPE_BOOK_DIR}/.git" ]]; then
-      run_silent \mkdir "$RECIPE_BOOK_DIR"
+      run_silent mkdir "$RECIPE_BOOK_DIR"
       run_silent pushd "$RECIPE_BOOK_DIR"
 
       run_silent git init

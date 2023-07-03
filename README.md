@@ -21,8 +21,8 @@
 
 ## Prerequisites
 
-- bash 4.0 or higher (`brew install bash` on mac).
-- [gum](https://github.com/charmbracelet/gum)
+- bash 4.0 or higher
+- [gum](https://github.com/charmbracelet/gum) for interactive commands
 - [fd](https://github.com/sharkdp/fd)
 - git
 
@@ -59,10 +59,13 @@ recipe add docker/express-js --from Dockerfile
 # View list of recipes
 recipe list
 
+# Edit a recipe
+recipe edit docker/express-js
+
 # Use a recipe in another project
 recipe use docker/express-js --destination Dockerfile
 
-# Optionaly, you can add a remote repository to sync your recipe book across devices
+# Optionally, you can add a remote repository to sync your recipe book across devices
 recipe git remote add origin git@github.com:awesome-user/recipe-book
 
 # Or, if you already have a recipe book
@@ -89,7 +92,7 @@ Commands:
   remove   Remove a recipe
   edit     Edit a recipe
   clone    Clone a remote git repository
-  link     Create a symbolic link to the recipe executable
+  link     Create a symbolic link to the recipe script
   show     Show the content of a recipe
 
 Options:

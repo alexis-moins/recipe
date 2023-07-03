@@ -1,3 +1,3 @@
 run_silent() {
-  ${@} &> /dev/null
+  command ${@} &> /dev/null
 }
