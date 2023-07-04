@@ -59,10 +59,6 @@ commands:
         long: --edit
         help: Edit the recipe once it has been added
 
-      - short: -t
-        long: --template
-        help: Add the recipe as a template
-
     examples:
       - recipe add docker/express-js
       - recipe add ssh-config -f ~/.ssh/config
@@ -74,6 +70,11 @@ commands:
     filters:
       - recipe_book_ready
 
+    flags:
+      - short: -t
+        long: --templates
+        help: Only list templates
+
     examples:
       - recipe list
 
@@ -82,7 +83,7 @@ commands:
 
     catch_all:
       label: COMMAND
-      help: Command to run inside the recipe book
+      help: Command to run inside your recipe book
       required: true
 
     examples:
