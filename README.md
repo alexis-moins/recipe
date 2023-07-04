@@ -119,6 +119,7 @@ Commands:
   clone    Clone a remote git repository
   link     Create a symbolic link to the recipe script
   show     Show the content of a recipe
+  index    Build the template index
 
 Options:
   --help, -h

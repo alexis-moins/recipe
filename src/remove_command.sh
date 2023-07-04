@@ -12,11 +12,18 @@ local destination_path="${RECIPE_BOOK_DIR}/${recipe}"
 local destination_dir="${RECIPE_BOOK_DIR}/${recipe_dir}"
 
 if [[ -n "${auto_confirm}" ]] || confirm "Remove recipe?"; then
-    run_silent rm "${destination_path}"
-
+    run_silent \rm "${destination_path}"
     clean_directory "${destination_dir}"
 
     run_git add "${recipe}"
+
+    if [[ -f "${RECIPE_BOOK_DIR}/.templates" ]] && rg "${recipe}:" "${RECIPE_BOOK_DIR}/.templates" > /dev/null; then
+        local templates=`rg -v "${recipe}:" "${RECIPE_BOOK_DIR}/.templates"`
+
+        echo "${templates}" > "${RECIPE_BOOK_DIR}/.templates"
+        run_git add "${RECIPE_BOOK_DIR}/.templates"
+    fi
+
     git_commit "feat: removed recipe '${recipe}'"
 
     echo "$(green ✔) Removed recipe ${recipe}"

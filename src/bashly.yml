@@ -1,6 +1,6 @@
 name: recipe
 help: Store files/templates in a recipe book to use them anytime, anywhere
-version: 0.2.0
+version: 0.3.0
 
 environment_variables:
   - name: editor
@@ -40,7 +40,7 @@ commands:
     help: Add a new recipe
 
     filters:
-      - recipe_book_ready
+      - recipe_book_healthy
 
     args:
       - name: name
@@ -68,7 +68,7 @@ commands:
     help: List all your recipes
 
     filters:
-      - recipe_book_ready
+      - recipe_book_healthy
 
     flags:
       - short: -t
@@ -94,7 +94,7 @@ commands:
     help: Use a recipe locally
 
     filters:
-      - recipe_book_ready
+      - recipe_book_healthy
       - recipe_book_not_empty
 
     args:
@@ -117,7 +117,7 @@ commands:
     help: Remove a recipe
 
     filters:
-      - recipe_book_ready
+      - recipe_book_healthy
       - recipe_book_not_empty
 
     args:
@@ -138,7 +138,7 @@ commands:
     help: Edit a recipe
 
     filters:
-      - recipe_book_ready
+      - recipe_book_healthy
 
     args:
       - name: name
@@ -196,7 +196,7 @@ commands:
     help: Show the content of a recipe
 
     filters:
-      - recipe_book_ready
+      - recipe_book_healthy
       - recipe_book_not_empty
 
     args:
@@ -212,3 +212,11 @@ commands:
     examples:
       - recipe show
       - recipe show docker/express-js
+
+  - name: index
+    help: Build the template index
+
+    flags:
+      - short: -s
+        long: --simulate
+        help: Don't modify the template index

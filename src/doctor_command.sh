@@ -14,20 +14,23 @@ if [[ ! -d "${RECIPE_BOOK_DIR}/.git" ]]; then
     echo "$(yellow info:) consider running $(yellow_underlined recipe init)"
 fi
 
-if [[ ! -d "${RECIPE_BOOK_DIR}/.templates" ]]; then
-    [[ -n "${error}" ]] && echo "" || error="yes"
+if [[ -f "${RECIPE_BOOK_DIR}/.templates" ]]; then
+    local templates=`\rg -N --color=never --only-matching '([\w/]+):' --replace '$1' "${RECIPE_BOOK_DIR}/.templates"`
 
-    echo "$(yellow info:) your recipe book is missing the .templates directory"
-    echo "$(yellow info:) consider running $(yellow_underlined mkdir ${RECIPE_BOOK_DIR}/.templates)"
-fi
+    for template in ${templates}; do
+        if [[ ! -f "${RECIPE_BOOK_DIR}/${template}" ]]; then
+            [[ -n "${error}" ]] && echo "" || error="yes"
 
-if [[ ! -f "${RECIPE_BOOK_DIR}/.gitignore" ]] || ! run_silent \rg -e '^\.templates[/]?$' "${RECIPE_BOOK_DIR}/.gitignore"; then
-    [[ -n "${error}" ]] && echo "" || error="yes"
+            echo "$(yellow info:) your template index is not in sync with your recipe book"
+            echo "$(yellow info:) consider running $(yellow_underlined recipe index --simulate)"
 
-    echo "$(yellow info:) your recipe book should ignore the .templates directory"
-    echo "$(yellow info:) consider adding a $(yellow_underlined .gitignore) file"
+            break
+        fi
+    done
 fi
 
 if [[ -n "${error}" ]]; then
     return 1
+else
+    echo "Your recipe book is correctly setup"
 fi

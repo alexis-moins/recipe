@@ -14,12 +14,11 @@ run_silent pushd "${RECIPE_BOOK_DIR}"
 
 run_silent git init
 
-echo '.templates/' > ".gitignore"
+touch ".templates"
 
-run_git add .gitignore
+run_git add .templates
 git_commit "feat: initial commit"
 
 echo -e "$(green ✔) Initialized empty recipe book"
 
-\mkdir .templates
 run_silent popd

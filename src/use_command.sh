@@ -6,15 +6,14 @@ local destination="${args[--destination]}"
 [[ -z "${destination}" ]] && destination="$(basename ${recipe})"
 
 if [[ ! -f "${destination}" ]] || confirm "Overwrite ${destination}?"; then
-    local templates=`rg --only-matching "\{\{(.*)\}\}" --replace '$1' "${RECIPE_BOOK_DIR}/${recipe}"`
+    local variables=`rg -N "${recipe}:" "${RECIPE_BOOK_DIR}/.templates"`
 
-    if [[ -z "${templates}" ]]; then
+    if [[ -z "${variables}" ]]; then
         \cp -f "${RECIPE_BOOK_DIR}/${recipe}" "${destination}"
-        echo "$(green ✔) Your recipe is ready to use."
     else
         local expression=""
 
-        for template in ${templates}; do
+        for template in ${variables/${recipe}: /}; do
             [[ -n "${expression}" ]] && expression+=";"
             local response=`gum input --prompt "${template}: " --placeholder "something"`
 
@@ -26,6 +25,8 @@ if [[ ! -f "${destination}" ]] || confirm "Overwrite ${destination}?"; then
         done
 
         sed "${expression}" "${RECIPE_BOOK_DIR}/${recipe}" > "${destination}"
-        echo -e "\n$(green ✔) Your recipe is ready to use."
+        echo ""
     fi
+
+    echo "$(green ✔) Your recipe is ready to use"
 fi

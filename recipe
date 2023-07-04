@@ -40,6 +40,7 @@ recipe_usage() {
   printf "  %s   Clone a remote git repository\n" "clone "
   printf "  %s   Create a symbolic link to the recipe script\n" "link  "
   printf "  %s   Show the content of a recipe\n" "show  "
+  printf "  %s   Build the template index\n" "index "
   echo
 
   if [[ -n $long_usage ]]; then
@@ -159,10 +160,6 @@ recipe_add_usage() {
     printf "    Edit the recipe once it has been added\n"
     echo
 
-    printf "  %s\n" "--template, -t"
-    printf "    Add the recipe as a template\n"
-    echo
-
     printf "  %s\n" "--help, -h"
     printf "    Show this help\n"
     echo
@@ -196,12 +193,16 @@ recipe_list_usage() {
   echo
 
   printf "%s\n" "Usage:"
-  printf "  recipe list\n"
+  printf "  recipe list [OPTIONS]\n"
   printf "  recipe list --help | -h\n"
   echo
 
   if [[ -n $long_usage ]]; then
     printf "%s\n" "Options:"
+
+    printf "  %s\n" "--templates, -t"
+    printf "    Only list templates\n"
+    echo
 
     printf "  %s\n" "--help, -h"
     printf "    Show this help\n"
@@ -240,7 +241,7 @@ recipe_git_usage() {
     printf "%s\n" "Arguments:"
 
     echo "  COMMAND..."
-    printf "    Command to run inside the recipe book\n"
+    printf "    Command to run inside your recipe book\n"
     echo
 
     printf "%s\n" "Examples:"
@@ -508,6 +509,36 @@ recipe_show_usage() {
   fi
 }
 
+recipe_index_usage() {
+  if [[ -n $long_usage ]]; then
+    printf "recipe index - Build the template index\n"
+    echo
+
+  else
+    printf "recipe index - Build the template index\n"
+    echo
+
+  fi
+
+  printf "%s\n" "Usage:"
+  printf "  recipe index [OPTIONS]\n"
+  printf "  recipe index --help | -h\n"
+  echo
+
+  if [[ -n $long_usage ]]; then
+    printf "%s\n" "Options:"
+
+    printf "  %s\n" "--simulate, -s"
+    printf "    Don't modify the template index\n"
+    echo
+
+    printf "  %s\n" "--help, -h"
+    printf "    Show this help\n"
+    echo
+
+  fi
+}
+
 normalize_input() {
   local arg flags
 
@@ -606,23 +637,22 @@ filter_recipe() {
     echo "${recipes}" | gum filter --placeholder "Select a recipe..."
 }
 
-filter_recipe_book_ready() {
+filter_recipe_book_healthy() {
     if ! recipe_doctor_command &> /dev/null; then
-        echo "$(yellow info:) your recipe book is not ready yet"
+        echo "$(yellow info:) your recipe book is not correctly setup"
         echo "$(yellow info:) consider running $(yellow_underlined recipe doctor)"
     fi
 }
 
 filter_recipe_book_not_empty() {
     if [[ -z "$(find_recipe)" ]]; then
-        echo "$(yellow info:) your recipe book is empty"
-        echo "$(yellow info:) consider running $(yellow_underlined recipe add)"
+        echo "Your recipe book is empty"
     fi
 }
 
 find_recipe() {
     run_silent pushd "${RECIPE_BOOK_DIR}"
-    local recipes=`\fd --exclude='.gitignore' -c='never' -H -t=f`
+    local recipes=`\fd --exclude '.gitignore' --exclude '.templates' -c 'never' -H -t f`
 
     run_silent popd
     if [[ -n "${recipes}" ]]; then
@@ -632,6 +662,11 @@ find_recipe() {
 
 git_commit() {
     git -C "${RECIPE_BOOK_DIR}" commit -m "${1}"
+}
+
+parse_template() {
+    local regex="\{\{[[:space:]]*([\w:+]+)[[:space:]]*\}\}"
+    \rg -N --color=never --only-matching ${regex} --replace '$1' "${1}" | tr '\n' ' '
 }
 
 run_git() {
@@ -684,14 +719,13 @@ recipe_init_command() {
 
   run_silent git init
 
-  echo '.templates/' > ".gitignore"
+  touch ".templates"
 
-  run_git add .gitignore
+  run_git add .templates
   git_commit "feat: initial commit"
 
   echo -e "$(green ✔) Initialized empty recipe book"
 
-  \mkdir .templates
   run_silent popd
 
 }
@@ -713,22 +747,25 @@ recipe_doctor_command() {
       echo "$(yellow info:) consider running $(yellow_underlined recipe init)"
   fi
 
-  if [[ ! -d "${RECIPE_BOOK_DIR}/.templates" ]]; then
-      [[ -n "${error}" ]] && echo "" || error="yes"
+  if [[ -f "${RECIPE_BOOK_DIR}/.templates" ]]; then
+      local templates=`\rg -N --color=never --only-matching '([\w/]+):' --replace '$1' "${RECIPE_BOOK_DIR}/.templates"`
 
-      echo "$(yellow info:) your recipe book is missing the .templates directory"
-      echo "$(yellow info:) consider running $(yellow_underlined mkdir ${RECIPE_BOOK_DIR}/.templates)"
-  fi
+      for template in ${templates}; do
+          if [[ ! -f "${RECIPE_BOOK_DIR}/${template}" ]]; then
+              [[ -n "${error}" ]] && echo "" || error="yes"
 
-  if [[ ! -f "${RECIPE_BOOK_DIR}/.gitignore" ]] || ! run_silent \rg -e '^\.templates[/]?$' "${RECIPE_BOOK_DIR}/.gitignore"; then
-      [[ -n "${error}" ]] && echo "" || error="yes"
+              echo "$(yellow info:) your template index is not in sync with your recipe book"
+              echo "$(yellow info:) consider running $(yellow_underlined recipe index --simulate)"
 
-      echo "$(yellow info:) your recipe book should ignore the .templates directory"
-      echo "$(yellow info:) consider adding a $(yellow_underlined .gitignore) file"
+              break
+          fi
+      done
   fi
 
   if [[ -n "${error}" ]]; then
       return 1
+  else
+      echo "Your recipe book is correctly setup"
   fi
 
 }
@@ -738,8 +775,6 @@ recipe_add_command() {
 
   local file="${args[--from]}"
   local edit="${args[--edit]}"
-
-  local template="${args[--template]}"
 
   local recipe_dir="$(dirname ${recipe})"
 
@@ -760,6 +795,13 @@ recipe_add_command() {
   [[ -z "${file}" ]] || [[ -n "${edit}" ]] && ${EDITOR} "${destination_path}"
 
   if [[ -f "${destination_path}" ]]; then
+      local variables=`parse_template "${destination_path}"`
+
+      if [[ -n "${variables}" ]]; then
+          echo "${recipe}: ${variables::-1}" >> "${RECIPE_BOOK_DIR}/.templates"
+          run_git add ".templates"
+      fi
+
       run_git add "${recipe}"
       git_commit "feat: added recipe '${recipe}'"
 
@@ -771,7 +813,13 @@ recipe_add_command() {
 }
 
 recipe_list_command() {
-  find_recipe
+  local templates="${args[--templates]}"
+
+  if [[ -z "${templates}" ]]; then
+      find_recipe
+  elif [[ -f "${RECIPE_BOOK_DIR}/.templates" ]]; then
+      \rg -N --color=never --only-matching '([\w/]+):' --replace '$1' "${RECIPE_BOOK_DIR}/.templates"
+  fi
 
 }
 
@@ -789,15 +837,14 @@ recipe_use_command() {
   [[ -z "${destination}" ]] && destination="$(basename ${recipe})"
 
   if [[ ! -f "${destination}" ]] || confirm "Overwrite ${destination}?"; then
-      local templates=`rg --only-matching "\{\{(.*)\}\}" --replace '$1' "${RECIPE_BOOK_DIR}/${recipe}"`
+      local variables=`rg -N "${recipe}:" "${RECIPE_BOOK_DIR}/.templates"`
 
-      if [[ -z "${templates}" ]]; then
+      if [[ -z "${variables}" ]]; then
           \cp -f "${RECIPE_BOOK_DIR}/${recipe}" "${destination}"
-          echo "$(green ✔) Your recipe is ready to use."
       else
           local expression=""
 
-          for template in ${templates}; do
+          for template in ${variables/${recipe}: /}; do
               [[ -n "${expression}" ]] && expression+=";"
               local response=`gum input --prompt "${template}: " --placeholder "something"`
 
@@ -809,8 +856,10 @@ recipe_use_command() {
           done
 
           sed "${expression}" "${RECIPE_BOOK_DIR}/${recipe}" > "${destination}"
-          echo -e "\n$(green ✔) Your recipe is ready to use."
+          echo ""
       fi
+
+      echo "$(green ✔) Your recipe is ready to use"
   fi
 
 }
@@ -830,11 +879,18 @@ recipe_remove_command() {
   local destination_dir="${RECIPE_BOOK_DIR}/${recipe_dir}"
 
   if [[ -n "${auto_confirm}" ]] || confirm "Remove recipe?"; then
-      run_silent rm "${destination_path}"
-
+      run_silent \rm "${destination_path}"
       clean_directory "${destination_dir}"
 
       run_git add "${recipe}"
+
+      if [[ -f "${RECIPE_BOOK_DIR}/.templates" ]] && rg "${recipe}:" "${RECIPE_BOOK_DIR}/.templates" > /dev/null; then
+          local templates=`rg -v "${recipe}:" "${RECIPE_BOOK_DIR}/.templates"`
+
+          echo "${templates}" > "${RECIPE_BOOK_DIR}/.templates"
+          run_git add "${RECIPE_BOOK_DIR}/.templates"
+      fi
+
       git_commit "feat: removed recipe '${recipe}'"
 
       echo "$(green ✔) Removed recipe ${recipe}"
@@ -933,6 +989,41 @@ recipe_show_command() {
   local destination_path="${RECIPE_BOOK_DIR}/${recipe}"
 
   command ${RECIPE_SHOW_COMMAND} "${destination_path}"
+
+}
+
+recipe_index_command() {
+  local simulate="${args[--simulate]}"
+
+  if [[ -z "${simulate}" ]]; then
+      \rm -f "${RECIPE_BOOK_DIR}/.templates"
+  else
+      echo "=> Actions that would be performed:"
+  fi
+
+  for recipe in $(find_recipe); do
+      local variables=`parse_template "${RECIPE_BOOK_DIR}/${recipe}"`
+
+      if [[ -n "${variables}" ]]; then
+          echo "Adding recipe $(blue_underlined ${recipe}) to the index"
+
+          if [[ -z "${simulate}" ]]; then
+              echo "${recipe}: ${variables::-1}" >> "${RECIPE_BOOK_DIR}/.templates"
+              run_git add ".templates"
+          fi
+      fi
+  done
+
+  local has_changed=`run_git status | \rg '.templates'`
+
+  if [[ -z "${simulate}" ]] && [[ -n "${has_changed}" ]]; then
+      run_git add ".templates"
+      git_commit "feat: added template index"
+  fi
+
+  if [[ -z "${simulate}" ]]; then
+      echo "$(green ✔) Template index in sync"
+  fi
 
 }
 
@@ -1068,6 +1159,13 @@ parse_requirements() {
       action="show"
       shift
       recipe_show_parse_requirements "$@"
+      shift $#
+      ;;
+
+    index)
+      action="index"
+      shift
+      recipe_index_parse_requirements "$@"
       shift $#
       ;;
 
@@ -1237,12 +1335,6 @@ recipe_add_parse_requirements() {
         shift
         ;;
 
-      --template | -t)
-
-        args['--template']=1
-        shift
-        ;;
-
       -?*)
         printf "invalid option: %s\n" "$key" >&2
         exit 1
@@ -1274,7 +1366,7 @@ recipe_add_parse_requirements() {
     exit 1
   fi
 
-  filter_error=$(filter_recipe_book_ready)
+  filter_error=$(filter_recipe_book_healthy)
   if [[ -n $filter_error ]]; then
     echo "$filter_error" >&2
     exit 1
@@ -1305,6 +1397,12 @@ recipe_list_parse_requirements() {
     key="$1"
     case "$key" in
 
+      --templates | -t)
+
+        args['--templates']=1
+        shift
+        ;;
+
       -?*)
         printf "invalid option: %s\n" "$key" >&2
         exit 1
@@ -1320,7 +1418,7 @@ recipe_list_parse_requirements() {
     esac
   done
 
-  filter_error=$(filter_recipe_book_ready)
+  filter_error=$(filter_recipe_book_healthy)
   if [[ -n $filter_error ]]; then
     echo "$filter_error" >&2
     exit 1
@@ -1441,7 +1539,7 @@ recipe_use_parse_requirements() {
     esac
   done
 
-  filter_error=$(filter_recipe_book_ready)
+  filter_error=$(filter_recipe_book_healthy)
   if [[ -n $filter_error ]]; then
     echo "$filter_error" >&2
     exit 1
@@ -1510,7 +1608,7 @@ recipe_remove_parse_requirements() {
     esac
   done
 
-  filter_error=$(filter_recipe_book_ready)
+  filter_error=$(filter_recipe_book_healthy)
   if [[ -n $filter_error ]]; then
     echo "$filter_error" >&2
     exit 1
@@ -1573,7 +1671,7 @@ recipe_edit_parse_requirements() {
     esac
   done
 
-  filter_error=$(filter_recipe_book_ready)
+  filter_error=$(filter_recipe_book_healthy)
   if [[ -n $filter_error ]]; then
     echo "$filter_error" >&2
     exit 1
@@ -1763,7 +1861,7 @@ recipe_show_parse_requirements() {
     esac
   done
 
-  filter_error=$(filter_recipe_book_ready)
+  filter_error=$(filter_recipe_book_healthy)
   if [[ -n $filter_error ]]; then
     echo "$filter_error" >&2
     exit 1
@@ -1777,8 +1875,54 @@ recipe_show_parse_requirements() {
 
 }
 
+recipe_index_parse_requirements() {
+
+  while [[ $# -gt 0 ]]; do
+    case "${1:-}" in
+      --help | -h)
+        long_usage=yes
+        recipe_index_usage
+        exit
+        ;;
+
+      *)
+        break
+        ;;
+
+    esac
+  done
+
+  action="index"
+
+  while [[ $# -gt 0 ]]; do
+    key="$1"
+    case "$key" in
+
+      --simulate | -s)
+
+        args['--simulate']=1
+        shift
+        ;;
+
+      -?*)
+        printf "invalid option: %s\n" "$key" >&2
+        exit 1
+        ;;
+
+      *)
+
+        printf "invalid argument: %s\n" "$key" >&2
+        exit 1
+
+        ;;
+
+    esac
+  done
+
+}
+
 initialize() {
-  version="0.2.0"
+  version="0.3.0"
   long_usage=''
   set -e
 
@@ -1807,6 +1951,7 @@ run() {
     "clone") recipe_clone_command ;;
     "link") recipe_link_command ;;
     "show") recipe_show_command ;;
+    "index") recipe_index_command ;;
   esac
 }
 

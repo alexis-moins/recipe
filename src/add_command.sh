@@ -3,8 +3,6 @@ local recipe="${args[name]}"
 local file="${args[--from]}"
 local edit="${args[--edit]}"
 
-local template="${args[--template]}"
-
 local recipe_dir="$(dirname ${recipe})"
 
 # Full destination path to the recipe
@@ -24,6 +22,13 @@ fi
 [[ -z "${file}" ]] || [[ -n "${edit}" ]] && ${EDITOR} "${destination_path}"
 
 if [[ -f "${destination_path}" ]]; then
+    local variables=`parse_template "${destination_path}"`
+
+    if [[ -n "${variables}" ]]; then
+        echo "${recipe}: ${variables::-1}" >> "${RECIPE_BOOK_DIR}/.templates"
+        run_git add ".templates"
+    fi
+
     run_git add "${recipe}"
     git_commit "feat: added recipe '${recipe}'"
 
