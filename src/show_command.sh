@@ -1,6 +1,5 @@
 local recipe="${args[name]}"
 
-ensure_recipe_book_not_empty
 [[ -z "${recipe}" ]] && recipe="$(filter_recipe)"
 
 # Full destination path to the recipe

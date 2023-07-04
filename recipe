@@ -159,6 +159,10 @@ recipe_add_usage() {
     printf "    Edit the recipe once it has been added\n"
     echo
 
+    printf "  %s\n" "--template, -t"
+    printf "    Add the recipe as a template\n"
+    echo
+
     printf "  %s\n" "--help, -h"
     printf "    Show this help\n"
     echo
@@ -597,15 +601,6 @@ confirm() {
     [[ "${response}" == "yes" ]] && return 0 || return 1
 }
 
-ensure_recipe_book_not_empty() {
-    local candidates="$(find_recipe)"
-
-    if [[ -z "${candidates}" ]]; then
-        echo "Your recipe book is empty"
-        exit 1
-    fi
-}
-
 filter_recipe() {
     local recipes="$(find_recipe)"
     echo "${recipes}" | gum filter --placeholder "Select a recipe..."
@@ -615,6 +610,13 @@ filter_recipe_book_ready() {
     if ! recipe_doctor_command &> /dev/null; then
         echo "$(yellow info:) your recipe book is not ready yet"
         echo "$(yellow info:) consider running $(yellow_underlined recipe doctor)"
+    fi
+}
+
+filter_recipe_book_not_empty() {
+    if [[ -z "$(find_recipe)" ]]; then
+        echo "$(yellow info:) your recipe book is empty"
+        echo "$(yellow info:) consider running $(yellow_underlined recipe add)"
     fi
 }
 
@@ -687,7 +689,7 @@ recipe_init_command() {
   run_git add .gitignore
   git_commit "feat: initial commit"
 
-  echo -e "$(green ✔) Initialized recipe book"
+  echo -e "$(green ✔) Initialized empty recipe book"
 
   \mkdir .templates
   run_silent popd
@@ -737,6 +739,8 @@ recipe_add_command() {
   local file="${args[--from]}"
   local edit="${args[--edit]}"
 
+  local template="${args[--template]}"
+
   local recipe_dir="$(dirname ${recipe})"
 
   # Full destination path to the recipe
@@ -747,7 +751,7 @@ recipe_add_command() {
 
   # Create intermediary directories if needed
   if [[ -n "${recipe_dir}" ]] && [[ ! -d "${destination_dir}" ]]; then
-      run_silent mkdir "${destination_dir}"
+      \mkdir "${destination_dir}"
   fi
 
   [[ -n "${file}" ]] && \cp ${file} "${destination_path}"
@@ -780,7 +784,6 @@ recipe_use_command() {
   local recipe="${args[name]}"
   local destination="${args[--destination]}"
 
-  ensure_recipe_book_not_empty
   [[ -z "${recipe}" ]] && recipe="$(filter_recipe)"
 
   [[ -z "${destination}" ]] && destination="$(basename ${recipe})"
@@ -816,7 +819,6 @@ recipe_remove_command() {
   local recipe=${args['name']}
   local auto_confirm=${args['--yes']}
 
-  ensure_recipe_book_not_empty
   [[ -z "${recipe}" ]] && recipe="$(filter_recipe)"
 
   local recipe_dir="$(dirname ${recipe})"
@@ -925,7 +927,6 @@ recipe_link_command() {
 recipe_show_command() {
   local recipe="${args[name]}"
 
-  ensure_recipe_book_not_empty
   [[ -z "${recipe}" ]] && recipe="$(filter_recipe)"
 
   # Full destination path to the recipe
@@ -1217,7 +1218,7 @@ recipe_add_parse_requirements() {
         if [[ -n ${2+x} ]]; then
 
           if [[ -n $(validate_file_exists "$2") ]]; then
-            printf "validation error in %s:\n%s\n" "--from, -f FILE" "$(validate_file_exists "$2")" >&2
+            printf "$(red error:) %s %s\n" "--from, -f FILE" "$(validate_file_exists "$2")" >&2
             exit 1
           fi
 
@@ -1236,6 +1237,12 @@ recipe_add_parse_requirements() {
         shift
         ;;
 
+      --template | -t)
+
+        args['--template']=1
+        shift
+        ;;
+
       -?*)
         printf "invalid option: %s\n" "$key" >&2
         exit 1
@@ -1246,7 +1253,7 @@ recipe_add_parse_requirements() {
         if [[ -z ${args['name']+x} ]]; then
 
           if [[ -n $(validate_recipe_missing "$1") ]]; then
-            printf "validation error in %s:\n%s\n" "NAME" "$(validate_recipe_missing "$1")" >&2
+            printf "$(red error:) %s %s\n" "NAME" "$(validate_recipe_missing "$1")" >&2
             exit 1
           fi
 
@@ -1418,7 +1425,7 @@ recipe_use_parse_requirements() {
         if [[ -z ${args['name']+x} ]]; then
 
           if [[ -n $(validate_recipe_exists "$1") ]]; then
-            printf "validation error in %s:\n%s\n" "NAME" "$(validate_recipe_exists "$1")" >&2
+            printf "$(red error:) %s %s\n" "NAME" "$(validate_recipe_exists "$1")" >&2
             exit 1
           fi
 
@@ -1435,6 +1442,12 @@ recipe_use_parse_requirements() {
   done
 
   filter_error=$(filter_recipe_book_ready)
+  if [[ -n $filter_error ]]; then
+    echo "$filter_error" >&2
+    exit 1
+  fi
+
+  filter_error=$(filter_recipe_book_not_empty)
   if [[ -n $filter_error ]]; then
     echo "$filter_error" >&2
     exit 1
@@ -1481,7 +1494,7 @@ recipe_remove_parse_requirements() {
         if [[ -z ${args['name']+x} ]]; then
 
           if [[ -n $(validate_recipe_exists "$1") ]]; then
-            printf "validation error in %s:\n%s\n" "NAME" "$(validate_recipe_exists "$1")" >&2
+            printf "$(red error:) %s %s\n" "NAME" "$(validate_recipe_exists "$1")" >&2
             exit 1
           fi
 
@@ -1498,6 +1511,12 @@ recipe_remove_parse_requirements() {
   done
 
   filter_error=$(filter_recipe_book_ready)
+  if [[ -n $filter_error ]]; then
+    echo "$filter_error" >&2
+    exit 1
+  fi
+
+  filter_error=$(filter_recipe_book_not_empty)
   if [[ -n $filter_error ]]; then
     echo "$filter_error" >&2
     exit 1
@@ -1538,7 +1557,7 @@ recipe_edit_parse_requirements() {
         if [[ -z ${args['name']+x} ]]; then
 
           if [[ -n $(validate_recipe_exists "$1") ]]; then
-            printf "validation error in %s:\n%s\n" "NAME" "$(validate_recipe_exists "$1")" >&2
+            printf "$(red error:) %s %s\n" "NAME" "$(validate_recipe_exists "$1")" >&2
             exit 1
           fi
 
@@ -1728,7 +1747,7 @@ recipe_show_parse_requirements() {
         if [[ -z ${args['name']+x} ]]; then
 
           if [[ -n $(validate_recipe_exists "$1") ]]; then
-            printf "validation error in %s:\n%s\n" "NAME" "$(validate_recipe_exists "$1")" >&2
+            printf "$(red error:) %s %s\n" "NAME" "$(validate_recipe_exists "$1")" >&2
             exit 1
           fi
 
@@ -1750,37 +1769,21 @@ recipe_show_parse_requirements() {
     exit 1
   fi
 
+  filter_error=$(filter_recipe_book_not_empty)
+  if [[ -n $filter_error ]]; then
+    echo "$filter_error" >&2
+    exit 1
+  fi
+
 }
 
 initialize() {
-  version="0.1.0"
+  version="0.2.0"
   long_usage=''
   set -e
 
   export EDITOR="${EDITOR:-vim}"
   export RECIPE_BOOK_DIR="${RECIPE_BOOK_DIR:-${HOME}/recipe-book}"
-
-  # [[ ! -d "${RECIPE_BOOK_DIR}" ]] && \mkdir "${RECIPE_BOOK_DIR}"
-
-  # if [[ ! -d "${RECIPE_BOOK_DIR}/.git" ]]; then
-  #     run_silent pushd "$RECIPE_BOOK_DIR"
-
-  #     run_silent git init
-  #     run_silent popd
-
-  #     echo "$(green ✔) Initialized recipe book."
-  # fi
-
-  # if [[ ! -f "${RECIPE_BOOK_DIR}/.gitignore" ]] || ! grep '.templates' "${RECIPE_BOOK_DIR}/.gitignore"; then
-  #     echo ".templates/" >> "${RECIPE_BOOK_DIR}/.gitignore"
-
-  #     run_git add .gitignore
-  #     git_commit "feat: added .gitignore"
-
-  #     echo -e "$(green ✔) Added templates\n"
-  # fi
-
-  # [[ ! -d "${RECIPE_BOOK_DIR}/.templates" ]] && \mkdir "${RECIPE_BOOK_DIR}/.templates"
 
 }
 

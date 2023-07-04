@@ -1,6 +1,6 @@
 name: recipe
 help: Store files/templates in a recipe book to use them anytime, anywhere
-version: 0.1.0
+version: 0.2.0
 
 environment_variables:
   - name: editor
@@ -49,15 +49,19 @@ commands:
         validate: recipe_missing
 
     flags:
-      - long: --from
-        short: -f
+      - short: -f
+        long: --from
         arg: file
         help: Use the following file for this recipe
         validate: file_exists
 
-      - long: --edit
-        short: -e
+      - short: -e
+        long: --edit
         help: Edit the recipe once it has been added
+
+      - short: -t
+        long: --template
+        help: Add the recipe as a template
 
     examples:
       - recipe add docker/express-js
@@ -90,6 +94,7 @@ commands:
 
     filters:
       - recipe_book_ready
+      - recipe_book_not_empty
 
     args:
       - name: name
@@ -112,6 +117,7 @@ commands:
 
     filters:
       - recipe_book_ready
+      - recipe_book_not_empty
 
     args:
       - name: name
@@ -190,6 +196,7 @@ commands:
 
     filters:
       - recipe_book_ready
+      - recipe_book_not_empty
 
     args:
       - name: name

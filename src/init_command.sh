@@ -19,7 +19,7 @@ echo '.templates/' > ".gitignore"
 run_git add .gitignore
 git_commit "feat: initial commit"
 
-echo -e "$(green ✔) Initialized recipe book"
+echo -e "$(green ✔) Initialized empty recipe book"
 
 \mkdir .templates
 run_silent popd

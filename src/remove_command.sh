@@ -1,7 +1,6 @@
 local recipe=${args['name']}
 local auto_confirm=${args['--yes']}
 
-ensure_recipe_book_not_empty
 [[ -z "${recipe}" ]] && recipe="$(filter_recipe)"
 
 local recipe_dir="$(dirname ${recipe})"
