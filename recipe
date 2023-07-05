@@ -532,6 +532,10 @@ recipe_index_usage() {
     printf "    Don't modify the template index\n"
     echo
 
+    printf "  %s\n" "--update, -u"
+    printf "    Update templates\n"
+    echo
+
     printf "  %s\n" "--help, -h"
     printf "    Show this help\n"
     echo
@@ -588,6 +592,15 @@ inspect_args() {
     for k in "${sorted_keys[@]}"; do echo "- \${deps[$k]} = ${deps[$k]}"; done
   fi
 
+}
+
+add_template() {
+    local variables=`parse_template "${1}"`
+
+    if [[ -n "${variables}" ]]; then
+        echo "${1}: ${variables::-1}" >> "${RECIPE_BOOK_DIR}/.templates"
+        run_git add ".templates"
+    fi
 }
 
 clean_directory() {
@@ -660,13 +673,28 @@ find_recipe() {
     fi
 }
 
+find_templates() {
+    if [[ -f "${RECIPE_BOOK_DIR}/.templates" ]]; then
+        \rg -N --color=never --only-matching '([\w/\.-]+):' --replace '$1' "${RECIPE_BOOK_DIR}/.templates"
+    fi
+}
+
 git_commit() {
     git -C "${RECIPE_BOOK_DIR}" commit -m "${1}"
 }
 
 parse_template() {
     local regex="\{\{[[:space:]]*([\w:+]+)[[:space:]]*\}\}"
-    \rg -N --color=never --only-matching ${regex} --replace '$1' "${1}" | tr '\n' ' '
+    \rg -N --color=never --only-matching ${regex} --replace '$1' "${RECIPE_BOOK_DIR}/${1}" | tr '\n' ' '
+}
+
+remove_template() {
+    if [[ -f "${RECIPE_BOOK_DIR}/.templates" ]] && \rg "${1}:" "${RECIPE_BOOK_DIR}/.templates" > /dev/null; then
+        local templates=`rg -v "${1}:" "${RECIPE_BOOK_DIR}/.templates"`
+
+        echo "${templates}" > "${RECIPE_BOOK_DIR}/.templates"
+        run_git add "${RECIPE_BOOK_DIR}/.templates"
+    fi
 }
 
 run_git() {
@@ -747,20 +775,20 @@ recipe_doctor_command() {
       echo "$(yellow info:) consider running $(yellow_underlined recipe init)"
   fi
 
-  if [[ -f "${RECIPE_BOOK_DIR}/.templates" ]]; then
-      local templates=`\rg -N --color=never --only-matching '([\w/]+):' --replace '$1' "${RECIPE_BOOK_DIR}/.templates"`
+  # if [[ -f "${RECIPE_BOOK_DIR}/.templates" ]]; then
+  #     local templates=`\rg -N --color=never --only-matching '([\w/]+):' --replace '$1' "${RECIPE_BOOK_DIR}/.templates"`
 
-      for template in ${templates}; do
-          if [[ ! -f "${RECIPE_BOOK_DIR}/${template}" ]]; then
-              [[ -n "${error}" ]] && echo "" || error="yes"
+  #     for template in ${templates}; do
+  #         if [[ ! -f "${RECIPE_BOOK_DIR}/${template}" ]]; then
+  #             [[ -n "${error}" ]] && echo "" || error="yes"
 
-              echo "$(yellow info:) your template index is not in sync with your recipe book"
-              echo "$(yellow info:) consider running $(yellow_underlined recipe index --simulate)"
+  #             echo "$(yellow info:) your template index is not in sync with your recipe book"
+  #             echo "$(yellow info:) consider running $(yellow_underlined recipe index --simulate)"
 
-              break
-          fi
-      done
-  fi
+  #             break
+  #         fi
+  #     done
+  # fi
 
   if [[ -n "${error}" ]]; then
       return 1
@@ -795,7 +823,8 @@ recipe_add_command() {
   [[ -z "${file}" ]] || [[ -n "${edit}" ]] && ${EDITOR} "${destination_path}"
 
   if [[ -f "${destination_path}" ]]; then
-      local variables=`parse_template "${destination_path}"`
+      # TODO use add_template function instead
+      local variables=`parse_template "${recipe}"`
 
       if [[ -n "${variables}" ]]; then
           echo "${recipe}: ${variables::-1}" >> "${RECIPE_BOOK_DIR}/.templates"
@@ -817,8 +846,8 @@ recipe_list_command() {
 
   if [[ -z "${templates}" ]]; then
       find_recipe
-  elif [[ -f "${RECIPE_BOOK_DIR}/.templates" ]]; then
-      \rg -N --color=never --only-matching '([\w/]+):' --replace '$1' "${RECIPE_BOOK_DIR}/.templates"
+  else
+      find_templates
   fi
 
 }
@@ -884,7 +913,8 @@ recipe_remove_command() {
 
       run_git add "${recipe}"
 
-      if [[ -f "${RECIPE_BOOK_DIR}/.templates" ]] && rg "${recipe}:" "${RECIPE_BOOK_DIR}/.templates" > /dev/null; then
+      # TODO use remove_template function instead
+      if [[ -f "${RECIPE_BOOK_DIR}/.templates" ]] && \rg "${recipe}:" "${RECIPE_BOOK_DIR}/.templates" > /dev/null; then
           local templates=`rg -v "${recipe}:" "${RECIPE_BOOK_DIR}/.templates"`
 
           echo "${templates}" > "${RECIPE_BOOK_DIR}/.templates"
@@ -993,19 +1023,34 @@ recipe_show_command() {
 }
 
 recipe_index_command() {
+  local update="${args[--update]}"
   local simulate="${args[--simulate]}"
 
-  if [[ -z "${simulate}" ]]; then
-      \rm -f "${RECIPE_BOOK_DIR}/.templates"
-  else
-      echo "=> Actions that would be performed:"
-  fi
+  local templates="$(find_templates)"
 
+  # Checking that index contains existing templates
+  for template in $templates; do
+      name=`echo ${template} | cut -f 1 -d ':'`
+
+      if [[ -f "${RECIPE_BOOK_DIR}/${name}" ]]; then
+          if [[ -n "${update}" ]]; then
+              echo "$(blue [update]) ${name}"
+              [[ -z "${simulate}" ]] && remove_template "${name}" && add_template "${name}"
+          else
+              echo "[      ] ${name}"
+          fi
+      else
+          echo "$(red [remove]) ${name}"
+          [[ -z "${simulate}" ]] && remove_template "${name}"
+      fi
+  done
+
+  # Checking that the index is not missing a template
   for recipe in $(find_recipe); do
-      local variables=`parse_template "${RECIPE_BOOK_DIR}/${recipe}"`
+      local variables=`parse_template "${recipe}"`
 
-      if [[ -n "${variables}" ]]; then
-          echo "Adding recipe $(blue_underlined ${recipe}) to the index"
+      if [[ -n "${variables}" ]] && [[ ${templates} != *"${recipe}"* ]]; then
+          echo "$(green "[insert]") ${recipe}"
 
           if [[ -z "${simulate}" ]]; then
               echo "${recipe}: ${variables::-1}" >> "${RECIPE_BOOK_DIR}/.templates"
@@ -1022,7 +1067,7 @@ recipe_index_command() {
   fi
 
   if [[ -z "${simulate}" ]]; then
-      echo "$(green ✔) Template index in sync"
+      echo "$(green ✔) Template index up to date"
   fi
 
 }
@@ -1904,6 +1949,12 @@ recipe_index_parse_requirements() {
         shift
         ;;
 
+      --update | -u)
+
+        args['--update']=1
+        shift
+        ;;
+
       -?*)
         printf "invalid option: %s\n" "$key" >&2
         exit 1
@@ -1922,7 +1973,7 @@ recipe_index_parse_requirements() {
 }
 
 initialize() {
-  version="0.3.0"
+  version="0.4.0"
   long_usage=''
   set -e
 

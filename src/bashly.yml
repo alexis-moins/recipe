@@ -1,6 +1,6 @@
 name: recipe
 help: Store files/templates in a recipe book to use them anytime, anywhere
-version: 0.3.0
+version: 0.4.0
 
 environment_variables:
   - name: editor
@@ -220,3 +220,7 @@ commands:
       - short: -s
         long: --simulate
         help: Don't modify the template index
+
+      - short: -u
+        long: --update
+        help: Update templates

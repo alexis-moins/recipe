@@ -1,16 +1,31 @@
+local update="${args[--update]}"
 local simulate="${args[--simulate]}"
 
-if [[ -z "${simulate}" ]]; then
-    \rm -f "${RECIPE_BOOK_DIR}/.templates"
-else
-    echo "=> Actions that would be performed:"
-fi
+local templates="$(find_templates)"
 
+# Checking that index contains existing templates
+for template in $templates; do
+    name=`echo ${template} | cut -f 1 -d ':'`
+
+    if [[ -f "${RECIPE_BOOK_DIR}/${name}" ]]; then
+        if [[ -n "${update}" ]]; then
+            echo "$(blue [update]) ${name}"
+            [[ -z "${simulate}" ]] && remove_template "${name}" && add_template "${name}"
+        else
+            echo "[      ] ${name}"
+        fi
+    else
+        echo "$(red [remove]) ${name}"
+        [[ -z "${simulate}" ]] && remove_template "${name}"
+    fi
+done
+
+# Checking that the index is not missing a template
 for recipe in $(find_recipe); do
-    local variables=`parse_template "${RECIPE_BOOK_DIR}/${recipe}"`
+    local variables=`parse_template "${recipe}"`
 
-    if [[ -n "${variables}" ]]; then
-        echo "Adding recipe $(blue_underlined ${recipe}) to the index"
+    if [[ -n "${variables}" ]] && [[ ${templates} != *"${recipe}"* ]]; then
+        echo "$(green "[insert]") ${recipe}"
 
         if [[ -z "${simulate}" ]]; then
             echo "${recipe}: ${variables::-1}" >> "${RECIPE_BOOK_DIR}/.templates"
@@ -27,5 +42,5 @@ if [[ -z "${simulate}" ]] && [[ -n "${has_changed}" ]]; then
 fi
 
 if [[ -z "${simulate}" ]]; then
-    echo "$(green ✔) Template index in sync"
+    echo "$(green ✔) Template index up to date"
 fi
