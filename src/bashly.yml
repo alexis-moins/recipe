@@ -108,6 +108,10 @@ commands:
         arg: destination
         help: Destination path for the recipe
 
+      - short: -e
+        long: --edit
+        help: Edit the destination recipe
+
     examples:
       - recipe use
       - recipe use ssh-config -d ~/.ssh/config
