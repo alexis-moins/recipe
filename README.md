@@ -104,6 +104,7 @@ Commands:
   link     Create a link to the recipe script
   unlink   Remove the link to the recipe script
   show     Show the content of a recipe
+  update   Update recipe to the latest version
 
 Options:
   --help, -h

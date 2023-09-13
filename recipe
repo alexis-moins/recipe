@@ -41,6 +41,7 @@ recipe_usage() {
   printf "  %s   Create a link to the recipe script\n" "link  "
   printf "  %s   Remove the link to the recipe script\n" "unlink"
   printf "  %s   Show the content of a recipe\n" "show  "
+  printf "  %s   Update recipe to the latest version\n" "update"
   echo
 
   if [[ -n $long_usage ]]; then
@@ -542,6 +543,32 @@ recipe_show_usage() {
   fi
 }
 
+recipe_update_usage() {
+  if [[ -n $long_usage ]]; then
+    printf "recipe update - Update recipe to the latest version\n"
+    echo
+
+  else
+    printf "recipe update - Update recipe to the latest version\n"
+    echo
+
+  fi
+
+  printf "%s\n" "Usage:"
+  printf "  recipe update\n"
+  printf "  recipe update --help | -h\n"
+  echo
+
+  if [[ -n $long_usage ]]; then
+    printf "%s\n" "Options:"
+
+    printf "  %s\n" "--help, -h"
+    printf "    Show this help\n"
+    echo
+
+  fi
+}
+
 normalize_input() {
   local arg flags
 
@@ -986,6 +1013,16 @@ recipe_show_command() {
 
 }
 
+recipe_update_command() {
+  if [[ ! -d "${HOME}/.recipe" ]]; then
+      echo "No ~/.recipe directory. Check documentation for installation instruction."
+      exit 1
+  fi
+
+  git -C "${HOME}/.recipe" pull
+
+}
+
 parse_requirements() {
 
   while [[ $# -gt 0 ]]; do
@@ -1125,6 +1162,13 @@ parse_requirements() {
       action="show"
       shift
       recipe_show_parse_requirements "$@"
+      shift $#
+      ;;
+
+    update)
+      action="update"
+      shift
+      recipe_update_parse_requirements "$@"
       shift $#
       ;;
 
@@ -1868,6 +1912,46 @@ recipe_show_parse_requirements() {
 
 }
 
+recipe_update_parse_requirements() {
+
+  while [[ $# -gt 0 ]]; do
+    case "${1:-}" in
+      --help | -h)
+        long_usage=yes
+        recipe_update_usage
+        exit
+        ;;
+
+      *)
+        break
+        ;;
+
+    esac
+  done
+
+  action="update"
+
+  while [[ $# -gt 0 ]]; do
+    key="$1"
+    case "$key" in
+
+      -?*)
+        printf "invalid option: %s\n" "$key" >&2
+        exit 1
+        ;;
+
+      *)
+
+        printf "invalid argument: %s\n" "$key" >&2
+        exit 1
+
+        ;;
+
+    esac
+  done
+
+}
+
 initialize() {
   version="0.6.0"
   long_usage=''
@@ -1899,6 +1983,7 @@ run() {
     "link") recipe_link_command ;;
     "unlink") recipe_unlink_command ;;
     "show") recipe_show_command ;;
+    "update") recipe_update_command ;;
   esac
 }
 

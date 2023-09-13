@@ -218,3 +218,6 @@ commands:
     examples:
       - recipe show
       - recipe show docker/express-js
+
+  - name: update
+    help: Update recipe to the latest version
