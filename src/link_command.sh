@@ -24,6 +24,7 @@ else
     fi
 
     source=`realpath "${source}"`
+    echo "• Source directory: $(green "${source}")"
 
     if [[ ! -f "${source}/recipe" ]]; then
         echo "Script 'recipe' not found in $(magenta "${source}")"
@@ -32,6 +33,6 @@ else
 
     local executable=`test -n "${copy}" && echo "cp" || echo "ln -s"`
 
-    run_silent ${executable} "${source}/recipe" "${path}/recipe"
+    command ${executable} "${source}/recipe" "${path}/recipe"
     echo "$(green ✔) Link created in $(magenta "${path}")"
 fi

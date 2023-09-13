@@ -22,14 +22,6 @@ fi
 [[ -z "${file}" ]] || [[ -n "${edit}" ]] && ${EDITOR} "${destination_path}"
 
 if [[ -f "${destination_path}" ]]; then
-    # TODO use add_template function instead
-    local variables=`parse_template "${recipe}"`
-
-    if [[ -n "${variables}" ]]; then
-        echo "${recipe}: ${variables::-1}" >> "${RECIPE_BOOK_DIR}/.templates"
-        run_git add ".templates"
-    fi
-
     run_git add "${recipe}"
     git_commit "feat: added recipe '${recipe}'"
 

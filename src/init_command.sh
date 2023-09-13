@@ -11,13 +11,7 @@ fi
 \mkdir "${RECIPE_BOOK_DIR}"
 
 run_silent pushd "${RECIPE_BOOK_DIR}"
-
 run_silent git init
-
-touch ".templates"
-
-run_git add .templates
-git_commit "feat: initial commit"
 
 echo -e "$(green ✔) Initialized empty recipe book"
 

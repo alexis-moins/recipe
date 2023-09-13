@@ -1,5 +1,5 @@
 name: recipe
-help: Store files/templates in a recipe book to use them anytime, anywhere
+help: Store files in a recipe book to use them anytime, anywhere
 version: 0.5.0
 
 environment_variables:
@@ -216,15 +216,3 @@ commands:
     examples:
       - recipe show
       - recipe show docker/express-js
-
-  - name: index
-    help: Build the template index
-
-    flags:
-      - short: -s
-        long: --simulate
-        help: Don't modify the template index
-
-      - short: -u
-        long: --update
-        help: Update templates

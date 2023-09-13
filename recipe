@@ -13,11 +13,11 @@ version_command() {
 
 recipe_usage() {
   if [[ -n $long_usage ]]; then
-    printf "recipe - Store files/templates in a recipe book to use them anytime, anywhere\n"
+    printf "recipe - Store files in a recipe book to use them anytime, anywhere\n"
     echo
 
   else
-    printf "recipe - Store files/templates in a recipe book to use them anytime, anywhere\n"
+    printf "recipe - Store files in a recipe book to use them anytime, anywhere\n"
     echo
 
   fi
@@ -40,7 +40,6 @@ recipe_usage() {
   printf "  %s   Clone a remote git repository\n" "clone "
   printf "  %s   Create a symbolic link to the recipe script\n" "link  "
   printf "  %s   Show the content of a recipe\n" "show  "
-  printf "  %s   Build the template index\n" "index "
   echo
 
   if [[ -n $long_usage ]]; then
@@ -513,40 +512,6 @@ recipe_show_usage() {
   fi
 }
 
-recipe_index_usage() {
-  if [[ -n $long_usage ]]; then
-    printf "recipe index - Build the template index\n"
-    echo
-
-  else
-    printf "recipe index - Build the template index\n"
-    echo
-
-  fi
-
-  printf "%s\n" "Usage:"
-  printf "  recipe index [OPTIONS]\n"
-  printf "  recipe index --help | -h\n"
-  echo
-
-  if [[ -n $long_usage ]]; then
-    printf "%s\n" "Options:"
-
-    printf "  %s\n" "--simulate, -s"
-    printf "    Don't modify the template index\n"
-    echo
-
-    printf "  %s\n" "--update, -u"
-    printf "    Update templates\n"
-    echo
-
-    printf "  %s\n" "--help, -h"
-    printf "    Show this help\n"
-    echo
-
-  fi
-}
-
 normalize_input() {
   local arg flags
 
@@ -596,15 +561,6 @@ inspect_args() {
     for k in "${sorted_keys[@]}"; do echo "- \${deps[$k]} = ${deps[$k]}"; done
   fi
 
-}
-
-add_template() {
-    local variables=`parse_template "${1}"`
-
-    if [[ -n "${variables}" ]]; then
-        echo "${1}: ${variables::-1}" >> "${RECIPE_BOOK_DIR}/.templates"
-        run_git add ".templates"
-    fi
 }
 
 clean_directory() {
@@ -706,6 +662,7 @@ run_git() {
 }
 
 run_silent() {
+  echo $@
   command ${@} &> /dev/null
 }
 
@@ -748,13 +705,7 @@ recipe_init_command() {
   \mkdir "${RECIPE_BOOK_DIR}"
 
   run_silent pushd "${RECIPE_BOOK_DIR}"
-
   run_silent git init
-
-  touch ".templates"
-
-  run_git add .templates
-  git_commit "feat: initial commit"
 
   echo -e "$(green ✔) Initialized empty recipe book"
 
@@ -779,25 +730,10 @@ recipe_doctor_command() {
       echo "$(yellow info:) consider running $(yellow_underlined recipe init)"
   fi
 
-  # if [[ -f "${RECIPE_BOOK_DIR}/.templates" ]]; then
-  #     local templates=`\rg -N --color=never --only-matching '([\w/]+):' --replace '$1' "${RECIPE_BOOK_DIR}/.templates"`
-
-  #     for template in ${templates}; do
-  #         if [[ ! -f "${RECIPE_BOOK_DIR}/${template}" ]]; then
-  #             [[ -n "${error}" ]] && echo "" || error="yes"
-
-  #             echo "$(yellow info:) your template index is not in sync with your recipe book"
-  #             echo "$(yellow info:) consider running $(yellow_underlined recipe index --simulate)"
-
-  #             break
-  #         fi
-  #     done
-  # fi
-
   if [[ -n "${error}" ]]; then
       return 1
   else
-      echo "Your recipe book is correctly setup"
+      echo "$(green ✔) Your recipe book is correctly setup"
   fi
 
 }
@@ -827,14 +763,6 @@ recipe_add_command() {
   [[ -z "${file}" ]] || [[ -n "${edit}" ]] && ${EDITOR} "${destination_path}"
 
   if [[ -f "${destination_path}" ]]; then
-      # TODO use add_template function instead
-      local variables=`parse_template "${recipe}"`
-
-      if [[ -n "${variables}" ]]; then
-          echo "${recipe}: ${variables::-1}" >> "${RECIPE_BOOK_DIR}/.templates"
-          run_git add ".templates"
-      fi
-
       run_git add "${recipe}"
       git_commit "feat: added recipe '${recipe}'"
 
@@ -1003,6 +931,7 @@ recipe_link_command() {
       fi
 
       source=`realpath "${source}"`
+      echo "• Source directory: $(green "${source}")"
 
       if [[ ! -f "${source}/recipe" ]]; then
           echo "Script 'recipe' not found in $(magenta "${source}")"
@@ -1011,7 +940,7 @@ recipe_link_command() {
 
       local executable=`test -n "${copy}" && echo "cp" || echo "ln -s"`
 
-      run_silent ${executable} "${source}/recipe" "${path}/recipe"
+      command ${executable} "${source}/recipe" "${path}/recipe"
       echo "$(green ✔) Link created in $(magenta "${path}")"
   fi
 
@@ -1026,56 +955,6 @@ recipe_show_command() {
   local destination_path="${RECIPE_BOOK_DIR}/${recipe}"
 
   command ${RECIPE_SHOW_COMMAND} "${destination_path}"
-
-}
-
-recipe_index_command() {
-  local update="${args[--update]}"
-  local simulate="${args[--simulate]}"
-
-  local templates="$(find_templates)"
-
-  # Checking that index contains existing templates
-  for template in $templates; do
-      name=`echo ${template} | cut -f 1 -d ':'`
-
-      if [[ -f "${RECIPE_BOOK_DIR}/${name}" ]]; then
-          if [[ -n "${update}" ]]; then
-              echo "$(blue [update]) ${name}"
-              [[ -z "${simulate}" ]] && remove_template "${name}" && add_template "${name}"
-          else
-              echo "[      ] ${name}"
-          fi
-      else
-          echo "$(red [remove]) ${name}"
-          [[ -z "${simulate}" ]] && remove_template "${name}"
-      fi
-  done
-
-  # Checking that the index is not missing a template
-  for recipe in $(find_recipe); do
-      local variables=`parse_template "${recipe}"`
-
-      if [[ -n "${variables}" ]] && [[ ${templates} != *"${recipe}"* ]]; then
-          echo "$(green "[insert]") ${recipe}"
-
-          if [[ -z "${simulate}" ]]; then
-              echo "${recipe}: ${variables::-1}" >> "${RECIPE_BOOK_DIR}/.templates"
-              run_git add ".templates"
-          fi
-      fi
-  done
-
-  local has_changed=`run_git status | \rg '.templates'`
-
-  if [[ -z "${simulate}" ]] && [[ -n "${has_changed}" ]]; then
-      run_git add ".templates"
-      git_commit "feat: added template index"
-  fi
-
-  if [[ -z "${simulate}" ]]; then
-      echo "$(green ✔) Template index up to date"
-  fi
 
 }
 
@@ -1211,13 +1090,6 @@ parse_requirements() {
       action="show"
       shift
       recipe_show_parse_requirements "$@"
-      shift $#
-      ;;
-
-    index)
-      action="index"
-      shift
-      recipe_index_parse_requirements "$@"
       shift $#
       ;;
 
@@ -1933,60 +1805,8 @@ recipe_show_parse_requirements() {
 
 }
 
-recipe_index_parse_requirements() {
-
-  while [[ $# -gt 0 ]]; do
-    case "${1:-}" in
-      --help | -h)
-        long_usage=yes
-        recipe_index_usage
-        exit
-        ;;
-
-      *)
-        break
-        ;;
-
-    esac
-  done
-
-  action="index"
-
-  while [[ $# -gt 0 ]]; do
-    key="$1"
-    case "$key" in
-
-      --simulate | -s)
-
-        args['--simulate']=1
-        shift
-        ;;
-
-      --update | -u)
-
-        args['--update']=1
-        shift
-        ;;
-
-      -?*)
-        printf "invalid option: %s\n" "$key" >&2
-        exit 1
-        ;;
-
-      *)
-
-        printf "invalid argument: %s\n" "$key" >&2
-        exit 1
-
-        ;;
-
-    esac
-  done
-
-}
-
 initialize() {
-  version="0.4.0"
+  version="0.5.0"
   long_usage=''
   set -e
 
@@ -2015,7 +1835,6 @@ run() {
     "clone") recipe_clone_command ;;
     "link") recipe_link_command ;;
     "show") recipe_show_command ;;
-    "index") recipe_index_command ;;
   esac
 }
 

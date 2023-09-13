@@ -79,28 +79,12 @@ recipe use docker/express-js --destination Dockerfile
 recipe git remote add origin git@github.com:awesome-user/recipe-book
 ```
 
-## Templates (wip)
-
-A `template` is a recipe containing any number of special delimiter `{{ NAME }}`. Those delimiter enable you to write even more flexible recipes. Consider the following `docker/node` template file:
-```Dockerfile
-FROM node:{{ version }}
-
-RUN {{ step }}
-EXPOSE {{ port }}
-
-CMD {{ command }}
-```
-
-When running `recipe use docker/node -d Dockerfile`, you will be asked for values to replace the variables `version`, `step`, `port` and `command`. Once you're done, the final recipe will be added to you local directory.
-
-Note that the template workflow is subject to change!
-
 ## Usage
 
 ```
 $ recipe
 
-recipe - Store files/templates in a recipe book to use them anytime, anywhere
+recipe - Store files in a recipe book to use them anytime, anywhere
 
 Usage:
   recipe COMMAND
@@ -119,7 +103,6 @@ Commands:
   clone    Clone a remote git repository
   link     Create a symbolic link to the recipe script
   show     Show the content of a recipe
-  index    Build the template index
 
 Options:
   --help, -h
