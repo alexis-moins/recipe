@@ -40,14 +40,14 @@ git clone git@github.com:alexis-moins/recipe.git ~/.recipe
 cd ~/.recipe && ./recipe link
 ```
 
-The last command creates a symbolic link to the `recipe` script in the `~/.local/bin/` directory. If you cloned the repository elsewhere, you may pass the repository path to the link command using the `-s | --source` flag. Likewise, you can also change the link destination path with the optional `path` argument!
+The last command creates a symbolic link to the `recipe` script in the `~/.local/bin/` directory. You can also change the link destination path with the optional `path` argument.
 ```bash
-./recipe link /usr/local/bin/ --source ~/scritps/recipe
+./recipe link /usr/local/bin/
 ```
 
 ### Manually
 
-Clone the repository then move the [recipe](recipe) script to `~/.local/bin/` or anywhere in your `PATH`, and make it executable.
+Clone the repository then move the [recipe](recipe) script to `~/.local/bin/` or anywhere in your `PATH`, and ensure it is executable!
 
 ## Quick Start
 
@@ -101,7 +101,8 @@ Commands:
   remove   Remove a recipe
   edit     Edit a recipe
   clone    Clone a remote git repository
-  link     Create a symbolic link to the recipe script
+  link     Create a link to the recipe script
+  unlink   Remove the link to the recipe script
   show     Show the content of a recipe
 
 Options:

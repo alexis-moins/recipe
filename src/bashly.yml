@@ -1,6 +1,6 @@
 name: recipe
 help: Store files in a recipe book to use them anytime, anywhere
-version: 0.5.0
+version: 0.6.0
 
 environment_variables:
   - name: editor
@@ -170,31 +170,33 @@ commands:
       - 'recipe clone git@github:awesome-user/recipe-book.git --yes'
 
   - name: link
-    help: Create a symbolic link to the recipe script
+    help: Create a link to the recipe script
 
     args:
       - name: path
-        help: Path to the symbolic link
+        help: Path to the link
         default: ${HOME}/.local/bin
 
     flags:
-      - short: -r
-        long: --remove
-        help: Remove the symbolic link instead
-
-      - short: -s
-        long: --source
-        arg: source
-        default: ${HOME}/.recipe
-        help: Path to the directory containing the recipe script
-
       - short: -c
         long: --copy
         help: Copy the script instead of creating a symbolic link
 
     examples:
+      - recipe link --copy
       - recipe link /usr/local/bin
-      - recipe link --source ~/scripts/recipe --remove
+
+  - name: unlink
+    help: Remove the link to the recipe script
+
+    args:
+      - name: path
+        help: Path to the link
+        default: ${HOME}/.local/bin
+
+    examples:
+      - recipe unlink
+      - recipe unlink /usr/local/bin
 
   - name: show
     help: Show the content of a recipe
