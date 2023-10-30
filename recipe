@@ -32,6 +32,7 @@ recipe_usage() {
   printf "  %s   Create and setup a new recipe book\n" "init  "
   printf "  %s   Check your recipe book for potential problems\n" "doctor"
   printf "  %s   Add a new recipe\n" "add   "
+  printf "  %s   Create a new recipe\n" "new   "
   printf "  %s   List all your recipes\n" "list  "
   printf "  %s   Access git from your recipe book\n" "git   "
   printf "  %s   Use a recipe locally\n" "use   "
@@ -147,20 +148,57 @@ recipe_add_usage() {
   fi
 
   printf "%s\n" "Usage:"
-  printf "  recipe add NAME [OPTIONS]\n"
+  printf "  recipe add FILE [NAME] [OPTIONS]\n"
   printf "  recipe add --help | -h\n"
   echo
 
   if [[ -n $long_usage ]]; then
     printf "%s\n" "Options:"
 
-    printf "  %s\n" "--from, -f FILE"
-    printf "    Use the following file for this recipe\n"
-    echo
-
     printf "  %s\n" "--edit, -e"
     printf "    Edit the recipe once it has been added\n"
     echo
+
+    printf "  %s\n" "--help, -h"
+    printf "    Show this help\n"
+    echo
+
+    printf "%s\n" "Arguments:"
+
+    printf "  %s\n" "FILE"
+    printf "    Path to the recipe file\n"
+    echo
+
+    printf "  %s\n" "NAME"
+    printf "    Name of the recipe\n"
+    echo
+
+    printf "%s\n" "Examples:"
+    printf "  recipe add Dockerfile\n"
+    printf "  recipe add ~/.ssh/config ssh-config\n"
+    echo
+
+  fi
+}
+
+recipe_new_usage() {
+  if [[ -n $long_usage ]]; then
+    printf "recipe new - Create a new recipe\n"
+    echo
+
+  else
+    printf "recipe new - Create a new recipe\n"
+    echo
+
+  fi
+
+  printf "%s\n" "Usage:"
+  printf "  recipe new NAME\n"
+  printf "  recipe new --help | -h\n"
+  echo
+
+  if [[ -n $long_usage ]]; then
+    printf "%s\n" "Options:"
 
     printf "  %s\n" "--help, -h"
     printf "    Show this help\n"
@@ -173,8 +211,7 @@ recipe_add_usage() {
     echo
 
     printf "%s\n" "Examples:"
-    printf "  recipe add docker/express-js\n"
-    printf "  recipe add ssh-config -f ~/.ssh/config\n"
+    printf "  recipe new docker/express-js\n"
     echo
 
   fi
@@ -262,16 +299,12 @@ recipe_use_usage() {
   fi
 
   printf "%s\n" "Usage:"
-  printf "  recipe use [NAME] [OPTIONS]\n"
+  printf "  recipe use [RECIPE] [DESTINATION] [OPTIONS]\n"
   printf "  recipe use --help | -h\n"
   echo
 
   if [[ -n $long_usage ]]; then
     printf "%s\n" "Options:"
-
-    printf "  %s\n" "--destination, -d DESTINATION"
-    printf "    Destination path for the recipe\n"
-    echo
 
     printf "  %s\n" "--edit, -e"
     printf "    Edit the destination recipe\n"
@@ -283,13 +316,17 @@ recipe_use_usage() {
 
     printf "%s\n" "Arguments:"
 
-    printf "  %s\n" "NAME"
+    printf "  %s\n" "RECIPE"
     printf "    Name of the recipe\n"
+    echo
+
+    printf "  %s\n" "DESTINATION"
+    printf "    Destination to copy the recipe to\n"
     echo
 
     printf "%s\n" "Examples:"
     printf "  recipe use\n"
-    printf "  recipe use ssh-config -d ~/.ssh/config\n"
+    printf "  recipe use ssh-config ~/.ssh/config\n"
     echo
 
   fi
@@ -515,7 +552,7 @@ recipe_show_usage() {
   if [[ -n $long_usage ]]; then
     printf "%s\n" "Options:"
 
-    printf "  %s\n" "--pager, -p PAGER"
+    printf "  %s\n" "--exec, -e EXECUTABLE"
     printf "    Executable used to show the recipe\n"
     printf "    Default: cat\n"
     echo
@@ -531,7 +568,7 @@ recipe_show_usage() {
     echo
 
     printf "%s\n" "Examples:"
-    printf "  recipe show -p bat\n"
+    printf "  recipe show --exec bat\n"
     printf "  recipe show docker/express-js\n"
     echo
 
@@ -763,7 +800,7 @@ validate_recipe_exists() {
 }
 
 validate_recipe_missing() {
-    [[ ! -f "${RECIPE_BOOK_DIR:-${HOME}/recipe-book}/$1" ]] || echo "Your recipe book already contains that recipe."
+    [[ ! -f "${RECIPE_BOOK_DIR}/$1" ]] || echo "Your recipe book already contains that recipe."
 }
 
 recipe_init_command() {
@@ -815,10 +852,12 @@ recipe_doctor_command() {
 }
 
 recipe_add_command() {
-  local recipe="${args[name]}"
+  local file="${args[file]}"
 
-  local file="${args[--from]}"
+  local recipe="${args[name]:-${file}}"
   local edit="${args[--edit]}"
+
+  [[ -f "${RECIPE_BOOK_DIR}/${recipe}" ]] && echo "$(red error:) Your recipe book already contains that recipe." && return 1
 
   local recipe_dir="$(dirname ${recipe})"
 
@@ -830,13 +869,13 @@ recipe_add_command() {
 
   # Create intermediary directories if needed
   if [[ -n "${recipe_dir}" ]] && [[ ! -d "${destination_dir}" ]]; then
-      \mkdir "${destination_dir}"
+      \mkdir -p "${destination_dir}"
   fi
 
-  [[ -n "${file}" ]] && \cp ${file} "${destination_path}"
+  [[ -n "${recipe}" ]] && \cp ${file} "${destination_path}"
 
-  # Edit the file if no --from flags was passed or if the --edit flag was passed
-  [[ -z "${file}" ]] || [[ -n "${edit}" ]] && ${EDITOR} "${destination_path}"
+  # Edit the file if the --edit flag was passed
+  [[ -n "${edit}" ]] && ${EDITOR} "${destination_path}"
 
   if [[ -f "${destination_path}" ]]; then
       run_git add "${recipe}"
@@ -845,6 +884,41 @@ recipe_add_command() {
       echo "$(green ✔) New recipe added"
   else
       clean_directory "${destination_dir}"
+      echo "$(red x) Recipe import aborted"
+  fi
+
+}
+
+recipe_new_command() {
+  echo "# this file is located in 'src/new_command.sh'"
+  echo "# code for 'recipe new' goes here"
+  echo "# you can edit it freely and regenerate (it will not be overwritten)"
+  inspect_args
+  local recipe="${args[name]}"
+
+  local recipe_dir="$(dirname ${recipe})"
+
+  # Full destination path to the recipe
+  local destination_path="${RECIPE_BOOK_DIR}/${recipe}"
+
+  # Directory in which the recipe will be stored
+  local destination_dir="${RECIPE_BOOK_DIR}/${recipe_dir}"
+
+  # Create intermediary directories if needed
+  if [[ -n "${recipe_dir}" ]] && [[ ! -d "${destination_dir}" ]]; then
+      \mkdir -p "${destination_dir}"
+  fi
+
+  ${EDITOR} "${destination_path}"
+
+  if [[ -f "${destination_path}" ]]; then
+      run_git add "${recipe}"
+      git_commit "feat: added recipe '${recipe}'"
+
+      echo "$(green ✔) New recipe added"
+  else
+      clean_directory "${destination_dir}"
+      echo "$(red x) Recipe creation aborted"
   fi
 
 }
@@ -860,8 +934,8 @@ recipe_git_command() {
 }
 
 recipe_use_command() {
-  local recipe="${args[name]}"
-  local destination="${args[--destination]}"
+  local recipe="${args[recipe]}"
+  local destination="${args[destination]}"
   local edit="${args[--edit]}"
 
   [[ -z "${recipe}" ]] && recipe="$(filter_recipe)"
@@ -869,28 +943,7 @@ recipe_use_command() {
   [[ -z "${destination}" ]] && destination="$(basename ${recipe})"
 
   if [[ ! -f "${destination}" ]] || confirm "Overwrite ${destination}?"; then
-      # local variables=`rg -N "${recipe}:" "${RECIPE_BOOK_DIR}/.templates"`
-
-      # if [[ -z "${variables}" ]]; then
       \cp -f "${RECIPE_BOOK_DIR}/${recipe}" "${destination}"
-      # else
-      #     local expression=""
-
-      #     for template in ${variables/${recipe}: /}; do
-      #         [[ -n "${expression}" ]] && expression+=";"
-      #         local response=`gum input --prompt "${template}: " --placeholder "something"`
-
-      #         [[ -z "${response}" ]] && exit 1
-
-      #         echo "${template}: $(cyan ${response})"
-
-      #         expression+="s/{{ ${template} }}/${response}/"
-      #     done
-
-      #     sed "${expression}" "${RECIPE_BOOK_DIR}/${recipe}" > "${destination}"
-      #     echo ""
-      # fi
-
       echo "$(green ✔) Your recipe is ready to use"
 
       [[ -n "${edit}" ]] && $EDITOR "${destination}"
@@ -1017,14 +1070,14 @@ recipe_unlink_command() {
 
 recipe_show_command() {
   local recipe="${args[name]}"
-  local pager="${args[--pager]}"
+  local command="${args[--exec]}"
 
   [[ -z "${recipe}" ]] && recipe="$(filter_recipe)"
 
   # Full destination path to the recipe
   local destination_path="${RECIPE_BOOK_DIR}/${recipe}"
 
-  command ${pager} "${destination_path}"
+  command ${command} "${destination_path}"
 
 }
 
@@ -1119,6 +1172,13 @@ parse_requirements() {
       action="add"
       shift
       recipe_add_parse_requirements "$@"
+      shift $#
+      ;;
+
+    new)
+      action="new"
+      shift
+      recipe_new_parse_requirements "$@"
       shift $#
       ;;
 
@@ -1341,29 +1401,82 @@ recipe_add_parse_requirements() {
     key="$1"
     case "$key" in
 
-      --from | -f)
-
-        if [[ -n ${2+x} ]]; then
-
-          if [[ -n $(validate_file_exists "$2") ]]; then
-            printf "$(red error:) %s %s\n" "--from, -f FILE" "$(validate_file_exists "$2")" >&2
-            exit 1
-          fi
-
-          args['--from']="$2"
-          shift
-          shift
-        else
-          printf "%s\n" "--from requires an argument: --from, -f FILE" >&2
-          exit 1
-        fi
-        ;;
-
       --edit | -e)
 
         args['--edit']=1
         shift
         ;;
+
+      -?*)
+        printf "invalid option: %s\n" "$key" >&2
+        exit 1
+        ;;
+
+      *)
+
+        if [[ -z ${args['file']+x} ]]; then
+
+          if [[ -n $(validate_file_exists "$1") ]]; then
+            printf "$(red error:) %s %s\n" "FILE" "$(validate_file_exists "$1")" >&2
+            exit 1
+          fi
+
+          args['file']=$1
+          shift
+        elif [[ -z ${args['name']+x} ]]; then
+
+          if [[ -n $(validate_recipe_missing "$1") ]]; then
+            printf "$(red error:) %s %s\n" "NAME" "$(validate_recipe_missing "$1")" >&2
+            exit 1
+          fi
+
+          args['name']=$1
+          shift
+        else
+          printf "invalid argument: %s\n" "$key" >&2
+          exit 1
+        fi
+
+        ;;
+
+    esac
+  done
+
+  if [[ -z ${args['file']+x} ]]; then
+    printf "missing required argument: FILE\nusage: recipe add FILE [NAME] [OPTIONS]\n" >&2
+    exit 1
+  fi
+
+  filter_error=$(filter_recipe_book_healthy)
+  if [[ -n $filter_error ]]; then
+    echo "$filter_error" >&2
+    exit 1
+  fi
+
+}
+
+recipe_new_parse_requirements() {
+
+  while [[ $# -gt 0 ]]; do
+    case "${1:-}" in
+      --help | -h)
+        long_usage=yes
+        recipe_new_usage
+        exit
+        ;;
+
+      *)
+        break
+        ;;
+
+    esac
+  done
+
+  action="new"
+
+  while [[ $# -gt 0 ]]; do
+    key="$1"
+    case "$key" in
 
       -?*)
         printf "invalid option: %s\n" "$key" >&2
@@ -1392,7 +1505,7 @@ recipe_add_parse_requirements() {
   done
 
   if [[ -z ${args['name']+x} ]]; then
-    printf "missing required argument: NAME\nusage: recipe add NAME [OPTIONS]\n" >&2
+    printf "missing required argument: NAME\nusage: recipe new NAME\n" >&2
     exit 1
   fi
 
@@ -1524,19 +1637,6 @@ recipe_use_parse_requirements() {
     key="$1"
     case "$key" in
 
-      --destination | -d)
-
-        if [[ -n ${2+x} ]]; then
-
-          args['--destination']="$2"
-          shift
-          shift
-        else
-          printf "%s\n" "--destination requires an argument: --destination, -d DESTINATION" >&2
-          exit 1
-        fi
-        ;;
-
       --edit | -e)
 
         args['--edit']=1
@@ -1550,14 +1650,18 @@ recipe_use_parse_requirements() {
 
       *)
 
-        if [[ -z ${args['name']+x} ]]; then
+        if [[ -z ${args['recipe']+x} ]]; then
 
           if [[ -n $(validate_recipe_exists "$1") ]]; then
-            printf "$(red error:) %s %s\n" "NAME" "$(validate_recipe_exists "$1")" >&2
+            printf "$(red error:) %s %s\n" "RECIPE" "$(validate_recipe_exists "$1")" >&2
             exit 1
           fi
 
-          args['name']=$1
+          args['recipe']=$1
+          shift
+        elif [[ -z ${args['destination']+x} ]]; then
+
+          args['destination']=$1
           shift
         else
           printf "invalid argument: %s\n" "$key" >&2
@@ -1891,15 +1995,15 @@ recipe_show_parse_requirements() {
     key="$1"
     case "$key" in
 
-      --pager | -p)
+      --exec | -e)
 
         if [[ -n ${2+x} ]]; then
 
-          args['--pager']="$2"
+          args['--exec']="$2"
           shift
           shift
         else
-          printf "%s\n" "--pager requires an argument: --pager, -p PAGER" >&2
+          printf "%s\n" "--exec requires an argument: --exec, -e EXECUTABLE" >&2
           exit 1
         fi
         ;;
@@ -1930,7 +2034,7 @@ recipe_show_parse_requirements() {
     esac
   done
 
-  [[ -n ${args['--pager']:-} ]] || args['--pager']="cat"
+  [[ -n ${args['--exec']:-} ]] || args['--exec']="cat"
 
   filter_error=$(filter_recipe_book_healthy)
   if [[ -n $filter_error ]]; then
@@ -2054,6 +2158,7 @@ run() {
     "init") recipe_init_command ;;
     "doctor") recipe_doctor_command ;;
     "add") recipe_add_command ;;
+    "new") recipe_new_command ;;
     "list") recipe_list_command ;;
     "git") recipe_git_command ;;
     "use") recipe_use_command ;;

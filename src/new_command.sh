@@ -1,9 +1,8 @@
-local file="${args[file]}"
-
-local recipe="${args[name]:-${file}}"
-local edit="${args[--edit]}"
-
-[[ -f "${RECIPE_BOOK_DIR}/${recipe}" ]] && echo "$(red error:) Your recipe book already contains that recipe." && return 1
+echo "# this file is located in 'src/new_command.sh'"
+echo "# code for 'recipe new' goes here"
+echo "# you can edit it freely and regenerate (it will not be overwritten)"
+inspect_args
+local recipe="${args[name]}"
 
 local recipe_dir="$(dirname ${recipe})"
 
@@ -18,10 +17,7 @@ if [[ -n "${recipe_dir}" ]] && [[ ! -d "${destination_dir}" ]]; then
     \mkdir -p "${destination_dir}"
 fi
 
-[[ -n "${recipe}" ]] && \cp ${file} "${destination_path}"
-
-# Edit the file if the --edit flag was passed
-[[ -n "${edit}" ]] && ${EDITOR} "${destination_path}"
+${EDITOR} "${destination_path}"
 
 if [[ -f "${destination_path}" ]]; then
     run_git add "${recipe}"
@@ -30,5 +26,5 @@ if [[ -f "${destination_path}" ]]; then
     echo "$(green ✔) New recipe added"
 else
     clean_directory "${destination_dir}"
-    echo "$(red x) Recipe import aborted"
+    echo "$(red x) Recipe creation aborted"
 fi

@@ -43,25 +43,38 @@ commands:
       - recipe_book_healthy
 
     args:
-      - name: name
+      - name: file
         required: true
-        help: Name of the new recipe
+        help: Path to the recipe file
+        validate: file_exists
+
+      - name: name
+        help: Name of the recipe
         validate: recipe_missing
 
     flags:
-      - short: -f
-        long: --from
-        arg: file
-        help: Use the following file for this recipe
-        validate: file_exists
-
       - short: -e
         long: --edit
         help: Edit the recipe once it has been added
 
     examples:
-      - recipe add docker/express-js
-      - recipe add ssh-config -f ~/.ssh/config
+      - recipe add Dockerfile
+      - recipe add ~/.ssh/config ssh-config
+
+  - name: new
+    help: Create a new recipe
+
+    filters:
+      - recipe_book_healthy
+
+    args:
+      - name: name
+        required: true
+        help: Name of the new recipe
+        validate: recipe_missing
+
+    examples:
+      - recipe new docker/express-js
 
   - name: list
     alias: ls
@@ -93,23 +106,21 @@ commands:
       - recipe_book_not_empty
 
     args:
-      - name: name
+      - name: recipe
         help: Name of the recipe
         validate: recipe_exists
 
-    flags:
-      - short: -d
-        long: --destination
-        arg: destination
-        help: Destination path for the recipe
+      - name: destination
+        help: Destination to copy the recipe to
 
+    flags:
       - short: -e
         long: --edit
         help: Edit the destination recipe
 
     examples:
       - recipe use
-      - recipe use ssh-config -d ~/.ssh/config
+      - recipe use ssh-config ~/.ssh/config
 
   - name: remove
     alias: rm
@@ -206,14 +217,14 @@ commands:
         validate: recipe_exists
 
     flags:
-      - short: -p
-        long: --pager
-        arg: pager
+      - short: -e
+        long: --exec
+        arg: executable
         default: cat
         help: Executable used to show the recipe
 
     examples:
-      - recipe show -p bat
+      - recipe show --exec bat
       - recipe show docker/express-js
 
   - name: update

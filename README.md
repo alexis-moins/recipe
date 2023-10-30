@@ -95,6 +95,7 @@ Commands:
   init     Create and setup a new recipe book
   doctor   Check your recipe book for potential problems
   add      Add a new recipe
+  new      Create a new recipe
   list     List all your recipes
   git      Access git from your recipe book
   use      Use a recipe locally
