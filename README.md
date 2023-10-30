@@ -11,7 +11,7 @@
                  |_|         
 ```
 
-![Version](https://img.shields.io/badge/version-0.6.0-blue.svg)
+![Version](https://img.shields.io/badge/version-0.8.0-blue.svg)
 
 </div>
 
@@ -105,6 +105,7 @@ Commands:
   unlink   Remove the link to the recipe script
   show     Show the content of a recipe
   update   Update recipe to the latest version
+  dir      Show recipe book directory
 
 Options:
   --help, -h

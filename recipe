@@ -42,7 +42,7 @@ recipe_usage() {
   printf "  %s   Remove the link to the recipe script\n" "unlink"
   printf "  %s   Show the content of a recipe\n" "show  "
   printf "  %s   Update recipe to the latest version\n" "update"
-  printf "  %s   Show recipe-book directory\n" "dir   "
+  printf "  %s   Show recipe book directory\n" "dir   "
   echo
 
   if [[ -n $long_usage ]]; then
@@ -508,12 +508,17 @@ recipe_show_usage() {
   fi
 
   printf "%s\n" "Usage:"
-  printf "  recipe show [NAME]\n"
+  printf "  recipe show [NAME] [OPTIONS]\n"
   printf "  recipe show --help | -h\n"
   echo
 
   if [[ -n $long_usage ]]; then
     printf "%s\n" "Options:"
+
+    printf "  %s\n" "--pager, -p PAGER"
+    printf "    Executable used to show the recipe\n"
+    printf "    Default: cat\n"
+    echo
 
     printf "  %s\n" "--help, -h"
     printf "    Show this help\n"
@@ -525,15 +530,8 @@ recipe_show_usage() {
     printf "    Name of the recipe\n"
     echo
 
-    printf "%s\n" "Environment Variables:"
-
-    printf "  %s\n" "RECIPE_SHOW_COMMAND"
-    printf "    Executable used to print the recipe\n"
-    printf "    Default: cat\n"
-    echo
-
     printf "%s\n" "Examples:"
-    printf "  recipe show\n"
+    printf "  recipe show -p bat\n"
     printf "  recipe show docker/express-js\n"
     echo
 
@@ -568,11 +566,11 @@ recipe_update_usage() {
 
 recipe_dir_usage() {
   if [[ -n $long_usage ]]; then
-    printf "recipe dir - Show recipe-book directory\n"
+    printf "recipe dir - Show recipe book directory\n"
     echo
 
   else
-    printf "recipe dir - Show recipe-book directory\n"
+    printf "recipe dir - Show recipe book directory\n"
     echo
 
   fi
@@ -1019,13 +1017,14 @@ recipe_unlink_command() {
 
 recipe_show_command() {
   local recipe="${args[name]}"
+  local pager="${args[--pager]}"
 
   [[ -z "${recipe}" ]] && recipe="$(filter_recipe)"
 
   # Full destination path to the recipe
   local destination_path="${RECIPE_BOOK_DIR}/${recipe}"
 
-  command ${RECIPE_SHOW_COMMAND} "${destination_path}"
+  command ${pager} "${destination_path}"
 
 }
 
@@ -1886,13 +1885,24 @@ recipe_show_parse_requirements() {
     esac
   done
 
-  export RECIPE_SHOW_COMMAND="${RECIPE_SHOW_COMMAND:-cat}"
-
   action="show"
 
   while [[ $# -gt 0 ]]; do
     key="$1"
     case "$key" in
+
+      --pager | -p)
+
+        if [[ -n ${2+x} ]]; then
+
+          args['--pager']="$2"
+          shift
+          shift
+        else
+          printf "%s\n" "--pager requires an argument: --pager, -p PAGER" >&2
+          exit 1
+        fi
+        ;;
 
       -?*)
         printf "invalid option: %s\n" "$key" >&2
@@ -1919,6 +1929,8 @@ recipe_show_parse_requirements() {
 
     esac
   done
+
+  [[ -n ${args['--pager']:-} ]] || args['--pager']="cat"
 
   filter_error=$(filter_recipe_book_healthy)
   if [[ -n $filter_error ]]; then
@@ -2012,10 +2024,16 @@ recipe_dir_parse_requirements() {
     esac
   done
 
+  filter_error=$(filter_recipe_book_healthy)
+  if [[ -n $filter_error ]]; then
+    echo "$filter_error" >&2
+    exit 1
+  fi
+
 }
 
 initialize() {
-  version="0.6.0"
+  version="0.8.0"
   long_usage=''
   set -e
 

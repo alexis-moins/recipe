@@ -1,6 +1,6 @@
 name: recipe
 help: Store files in a recipe book to use them anytime, anywhere
-version: 0.6.0
+version: 0.8.0
 
 environment_variables:
   - name: editor
@@ -205,20 +205,25 @@ commands:
         help: Name of the recipe
         validate: recipe_exists
 
-    environment_variables:
-      - name: recipe_show_command
-        help: Executable used to print the recipe
+    flags:
+      - short: -p
+        long: --pager
+        arg: pager
         default: cat
+        help: Executable used to show the recipe
 
     examples:
-      - recipe show
+      - recipe show -p bat
       - recipe show docker/express-js
 
   - name: update
     help: Update recipe to the latest version
 
   - name: dir
-    help: Show recipe-book directory
+    help: Show recipe book directory
+
+    filters:
+     - recipe_book_healthy
 
     examples:
       - recipe dir
