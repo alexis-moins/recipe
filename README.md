@@ -61,7 +61,7 @@ recipe init
 recipe clone git@github.com:awesome-user/recipe-book
 
 # You can add a recipe
-recipe add docker/express-js --from Dockerfile
+recipe add Dockerfile docker/express-js
 
 # View the list of your recipes
 recipe list
@@ -73,7 +73,7 @@ recipe doctor
 recipe edit docker/express-js
 
 # Even use a recipe in another project
-recipe use docker/express-js --destination Dockerfile
+recipe use docker/express-js Dockerfile
 
 # Optionally, you can add a remote repository to sync your recipe book across devices
 recipe git remote add origin git@github.com:awesome-user/recipe-book
