@@ -70,11 +70,6 @@ commands:
     filters:
       - recipe_book_healthy
 
-    flags:
-      - short: -t
-        long: --templates
-        help: Only list templates
-
     examples:
       - recipe list
 
@@ -221,3 +216,10 @@ commands:
 
   - name: update
     help: Update recipe to the latest version
+
+  - name: dir
+    help: Show recipe-book directory
+
+    examples:
+      - recipe dir
+      - cd $(recipe dir)

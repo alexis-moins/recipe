@@ -42,6 +42,7 @@ recipe_usage() {
   printf "  %s   Remove the link to the recipe script\n" "unlink"
   printf "  %s   Show the content of a recipe\n" "show  "
   printf "  %s   Update recipe to the latest version\n" "update"
+  printf "  %s   Show recipe-book directory\n" "dir   "
   echo
 
   if [[ -n $long_usage ]]; then
@@ -194,16 +195,12 @@ recipe_list_usage() {
   echo
 
   printf "%s\n" "Usage:"
-  printf "  recipe list [OPTIONS]\n"
+  printf "  recipe list\n"
   printf "  recipe list --help | -h\n"
   echo
 
   if [[ -n $long_usage ]]; then
     printf "%s\n" "Options:"
-
-    printf "  %s\n" "--templates, -t"
-    printf "    Only list templates\n"
-    echo
 
     printf "  %s\n" "--help, -h"
     printf "    Show this help\n"
@@ -569,6 +566,37 @@ recipe_update_usage() {
   fi
 }
 
+recipe_dir_usage() {
+  if [[ -n $long_usage ]]; then
+    printf "recipe dir - Show recipe-book directory\n"
+    echo
+
+  else
+    printf "recipe dir - Show recipe-book directory\n"
+    echo
+
+  fi
+
+  printf "%s\n" "Usage:"
+  printf "  recipe dir\n"
+  printf "  recipe dir --help | -h\n"
+  echo
+
+  if [[ -n $long_usage ]]; then
+    printf "%s\n" "Options:"
+
+    printf "  %s\n" "--help, -h"
+    printf "    Show this help\n"
+    echo
+
+    printf "%s\n" "Examples:"
+    printf "  recipe dir\n"
+    printf "  cd $(recipe dir)\n"
+    echo
+
+  fi
+}
+
 normalize_input() {
   local arg flags
 
@@ -687,12 +715,6 @@ find_recipe() {
     run_silent popd
     if [[ -n "${recipes}" ]]; then
         echo "${recipes}"
-    fi
-}
-
-find_templates() {
-    if [[ -f "${RECIPE_BOOK_DIR}/.templates" ]]; then
-        \rg -N --color=never --only-matching '([\w/\.-]+):' --replace '$1' "${RECIPE_BOOK_DIR}/.templates"
     fi
 }
 
@@ -830,13 +852,7 @@ recipe_add_command() {
 }
 
 recipe_list_command() {
-  local templates="${args[--templates]}"
-
-  if [[ -z "${templates}" ]]; then
-      find_recipe
-  else
-      find_templates
-  fi
+  find_recipe
 
 }
 
@@ -1023,6 +1039,11 @@ recipe_update_command() {
 
 }
 
+recipe_dir_command() {
+  echo "${RECIPE_BOOK_DIR}"
+
+}
+
 parse_requirements() {
 
   while [[ $# -gt 0 ]]; do
@@ -1169,6 +1190,13 @@ parse_requirements() {
       action="update"
       shift
       recipe_update_parse_requirements "$@"
+      shift $#
+      ;;
+
+    dir)
+      action="dir"
+      shift
+      recipe_dir_parse_requirements "$@"
       shift $#
       ;;
 
@@ -1399,12 +1427,6 @@ recipe_list_parse_requirements() {
   while [[ $# -gt 0 ]]; do
     key="$1"
     case "$key" in
-
-      --templates | -t)
-
-        args['--templates']=1
-        shift
-        ;;
 
       -?*)
         printf "invalid option: %s\n" "$key" >&2
@@ -1952,6 +1974,46 @@ recipe_update_parse_requirements() {
 
 }
 
+recipe_dir_parse_requirements() {
+
+  while [[ $# -gt 0 ]]; do
+    case "${1:-}" in
+      --help | -h)
+        long_usage=yes
+        recipe_dir_usage
+        exit
+        ;;
+
+      *)
+        break
+        ;;
+
+    esac
+  done
+
+  action="dir"
+
+  while [[ $# -gt 0 ]]; do
+    key="$1"
+    case "$key" in
+
+      -?*)
+        printf "invalid option: %s\n" "$key" >&2
+        exit 1
+        ;;
+
+      *)
+
+        printf "invalid argument: %s\n" "$key" >&2
+        exit 1
+
+        ;;
+
+    esac
+  done
+
+}
+
 initialize() {
   version="0.6.0"
   long_usage=''
@@ -1984,6 +2046,7 @@ run() {
     "unlink") recipe_unlink_command ;;
     "show") recipe_show_command ;;
     "update") recipe_update_command ;;
+    "dir") recipe_dir_command ;;
   esac
 }
 
