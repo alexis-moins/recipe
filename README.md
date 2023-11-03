@@ -11,7 +11,7 @@
                  |_|         
 ```
 
-![Version](https://img.shields.io/badge/version-0.8.0-blue.svg)
+![Version](https://img.shields.io/badge/version-0.9.0-blue.svg)
 
 </div>
 
@@ -107,6 +107,7 @@ Commands:
   show     Show the content of a recipe
   update   Update recipe to the latest version
   dir      Show recipe book directory
+  filter   Interactively filter recipes
 
 Options:
   --help, -h
