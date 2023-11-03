@@ -1,6 +1,6 @@
 name: recipe
 help: Store files in a recipe book to use them anytime, anywhere
-version: 0.9.0
+version: 0.9.1
 
 environment_variables:
   - name: editor
@@ -38,6 +38,7 @@ commands:
 
   - name: add
     help: Add a new recipe
+    group: RECIPE
 
     filters:
       - recipe_book_healthy
@@ -63,6 +64,7 @@ commands:
 
   - name: new
     help: Create a new recipe
+    group: RECIPE
 
     filters:
       - recipe_book_healthy
@@ -79,6 +81,7 @@ commands:
   - name: list
     alias: ls
     help: List all your recipes
+    group: RECIPE
 
     filters:
       - recipe_book_healthy
@@ -100,6 +103,7 @@ commands:
 
   - name: use
     help: Use a recipe locally
+    group: RECIPE
 
     filters:
       - recipe_book_healthy
@@ -125,6 +129,7 @@ commands:
   - name: remove
     alias: rm
     help: Remove a recipe
+    group: RECIPE
 
     filters:
       - recipe_book_healthy
@@ -146,6 +151,7 @@ commands:
 
   - name: edit
     help: Edit a recipe
+    group: RECIPE
 
     filters:
       - recipe_book_healthy
@@ -206,6 +212,7 @@ commands:
 
   - name: show
     help: Show the content of a recipe
+    group: RECIPE
 
     filters:
       - recipe_book_healthy
@@ -242,6 +249,7 @@ commands:
 
   - name: filter
     help: Interactively filter recipes
+    group: RECIPE
 
     filters:
       - recipe_book_healthy

@@ -31,19 +31,21 @@ recipe_usage() {
   printf "%s\n" "Commands:"
   printf "  %s   Create and setup a new recipe book\n" "init  "
   printf "  %s   Check your recipe book for potential problems\n" "doctor"
-  printf "  %s   Add a new recipe\n" "add   "
-  printf "  %s   Create a new recipe\n" "new   "
-  printf "  %s   List all your recipes\n" "list  "
   printf "  %s   Access git from your recipe book\n" "git   "
-  printf "  %s   Use a recipe locally\n" "use   "
-  printf "  %s   Remove a recipe\n" "remove"
-  printf "  %s   Edit a recipe\n" "edit  "
   printf "  %s   Clone a remote git repository\n" "clone "
   printf "  %s   Create a link to the recipe script\n" "link  "
   printf "  %s   Remove the link to the recipe script\n" "unlink"
-  printf "  %s   Show the content of a recipe\n" "show  "
   printf "  %s   Update recipe to the latest version\n" "update"
   printf "  %s   Show recipe book directory\n" "dir   "
+  echo
+  printf "%s\n" "RECIPE Commands:"
+  printf "  %s   Add a new recipe\n" "add   "
+  printf "  %s   Create a new recipe\n" "new   "
+  printf "  %s   List all your recipes\n" "list  "
+  printf "  %s   Use a recipe locally\n" "use   "
+  printf "  %s   Remove a recipe\n" "remove"
+  printf "  %s   Edit a recipe\n" "edit  "
+  printf "  %s   Show the content of a recipe\n" "show  "
   printf "  %s   Interactively filter recipes\n" "filter"
   echo
 
@@ -2246,7 +2248,7 @@ recipe_filter_parse_requirements() {
 }
 
 initialize() {
-  version="0.8.0"
+  version="0.9.1"
   long_usage=''
   set -e
 

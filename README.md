@@ -11,7 +11,7 @@
                  |_|         
 ```
 
-![Version](https://img.shields.io/badge/version-0.9.0-blue.svg)
+![Version](https://img.shields.io/badge/version-0.9.1-blue.svg)
 
 </div>
 
@@ -94,19 +94,21 @@ Usage:
 Commands:
   init     Create and setup a new recipe book
   doctor   Check your recipe book for potential problems
-  add      Add a new recipe
-  new      Create a new recipe
-  list     List all your recipes
   git      Access git from your recipe book
-  use      Use a recipe locally
-  remove   Remove a recipe
-  edit     Edit a recipe
   clone    Clone a remote git repository
   link     Create a link to the recipe script
   unlink   Remove the link to the recipe script
-  show     Show the content of a recipe
   update   Update recipe to the latest version
   dir      Show recipe book directory
+
+RECIPE Commands:
+  add      Add a new recipe
+  new      Create a new recipe
+  list     List all your recipes
+  use      Use a recipe locally
+  remove   Remove a recipe
+  edit     Edit a recipe
+  show     Show the content of a recipe
   filter   Interactively filter recipes
 
 Options:
