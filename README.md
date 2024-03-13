@@ -40,10 +40,7 @@ git clone git@github.com:alexis-moins/recipe.git ~/.recipe
 cd ~/.recipe && ./recipe link --source .
 ```
 
-The last command creates a symbolic link to the `recipe` script in the `~/.local/bin/` directory. You can also change the link destination path with the optional `path` argument.
-```bash
-./recipe link /usr/local/bin/
-```
+The last command creates a symbolic link to the `recipe` script in the `~/.local/bin/` directory. You can also change the link destination path with the optional `path` argument. Finally, if you did not clone the repository in `~/.recipe`, don't forget to set the `RECIPE_INSTALL_DIR` environment variable!
 
 ### Manually
 
