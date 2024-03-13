@@ -37,7 +37,7 @@
 git clone git@github.com:alexis-moins/recipe.git ~/.recipe
 
 # Let recipe create the symbolic link for you!
-cd ~/.recipe && ./recipe link
+cd ~/.recipe && ./recipe link --source .
 ```
 
 The last command creates a symbolic link to the `recipe` script in the `~/.local/bin/` directory. You can also change the link destination path with the optional `path` argument.
