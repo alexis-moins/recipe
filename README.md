@@ -37,10 +37,10 @@
 git clone git@github.com:alexis-moins/recipe.git ~/.recipe
 
 # Let recipe create the symbolic link for you!
-cd ~/.recipe && ./recipe link --source .
+cd ~/.recipe && RECIPE_INSTALL_DIR=$(pwd) ./recipe link
 ```
 
-The last command creates a symbolic link to the `recipe` script in the `~/.local/bin/` directory. You can also change the link destination path with the optional `path` argument. Finally, if you did not clone the repository in `~/.recipe`, don't forget to set the `RECIPE_INSTALL_DIR` environment variable!
+The last command creates a symbolic link to the `recipe` script in the `~/.local/bin/` directory. You can also change the link destination path with the optional `path` argument. Finally, if you did not clone the repository in `~/.recipe`, run the don't forget to set the `RECIPE_INSTALL_DIR` environment variable!
 
 ### Manually
 
