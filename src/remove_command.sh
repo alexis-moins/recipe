@@ -16,15 +16,6 @@ if [[ -n "${auto_confirm}" ]] || confirm "Remove recipe?"; then
     clean_directory "${destination_dir}"
 
     run_git add "${recipe}"
-
-    # TODO use remove_template function instead
-    if [[ -f "${RECIPE_BOOK_DIR}/.templates" ]] && \rg "${recipe}:" "${RECIPE_BOOK_DIR}/.templates" > /dev/null; then
-        local templates=`rg -v "${recipe}:" "${RECIPE_BOOK_DIR}/.templates"`
-
-        echo "${templates}" > "${RECIPE_BOOK_DIR}/.templates"
-        run_git add "${RECIPE_BOOK_DIR}/.templates"
-    fi
-
     git_commit "feat: removed recipe '${recipe}'"
 
     echo "$(green ✔) Removed recipe ${recipe}"

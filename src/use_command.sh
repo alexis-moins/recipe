@@ -4,11 +4,15 @@ local edit="${args[--edit]}"
 
 [[ -z "${recipe}" ]] && recipe="$(filter_recipe)"
 
-[[ -z "${destination}" ]] && destination="$(basename ${recipe})"
+if [[ -z "${destination}" ]]; then
+    destination=`gum input --placeholder "recipe name..." --value "$(basename ${recipe})" --prompt "$(blue ◉) Recipe name: "`
+
+    [[ -z "${destination}" ]] && exit 1
+fi
 
 if [[ ! -f "${destination}" ]] || confirm "Overwrite ${destination}?"; then
     \cp -f "${RECIPE_BOOK_DIR}/${recipe}" "${destination}"
-    echo "$(green ✔) Your recipe is ready to use"
+    echo "$(green ✔) Recipe ${recipe} is ready to use as $(magenta ${destination})"
 
     [[ -n "${edit}" ]] && $EDITOR "${destination}"
 fi

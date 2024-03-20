@@ -1,9 +1,12 @@
 local file="${args[file]}"
-
 local recipe="${args[name]:-${file}}"
-local edit="${args[--edit]}"
 
-[[ -f "${RECIPE_BOOK_DIR}/${recipe}" ]] && echo "$(red error:) Your recipe book already contains that recipe." && return 1
+local edit="${args[--edit]}"
+local force="${args[--force]}"
+
+if [[ -f "${RECIPE_BOOK_DIR}/${recipe}" ]] && [[ -z "${force}" ]]; then
+    echo "$(red error:) Your recipe book already contains that recipe." && return 1
+fi
 
 local recipe_dir="$(dirname ${recipe})"
 
@@ -25,7 +28,9 @@ fi
 
 if [[ -f "${destination_path}" ]]; then
     run_git add "${recipe}"
-    git_commit "feat: added recipe '${recipe}'"
+
+    timestamp=`date "+%Y%m%d%H%m%S"`
+    git_commit "feat(${timestamp}): add recipe ${recipe}"
 
     echo "$(green ✔) New recipe added"
 else
