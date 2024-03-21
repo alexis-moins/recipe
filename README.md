@@ -26,7 +26,7 @@
 - git
 
 
-## Installation
+## 🧰 Installation
 
 ### Using recipe
 
@@ -46,7 +46,7 @@ The last command creates a symbolic link to the `recipe` script in the `~/.local
 
 Clone the repository then move the [recipe](recipe) script to anywhere in your `PATH`, and ensure it is executable!
 
-## Quick Start
+## 🌱 Quick Start
 
 After installing, you can follow these steps to quickly see how it works:
 
@@ -76,7 +76,7 @@ recipe use docker/express-js Dockerfile
 recipe git remote add origin git@github.com:awesome-user/recipe-book
 ```
 
-## Multiple recipe books
+## 📦 Multiple recipe books
 
 If you want to use multiple recipe book, you can always create aliases in your shell
 ```bash
@@ -88,7 +88,7 @@ And call the recipe book this way
 school-book use javascript/singleton
 ```
 
-## Usage
+## 🚦 Usage
 
 ```
 $ recipe
