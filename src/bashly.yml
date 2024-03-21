@@ -179,7 +179,7 @@ commands:
     args:
       - name: path
         help: Path to the link
-        default: ${HOME}/.local/bin
+        required: true
 
     flags:
       - short: -c
@@ -187,8 +187,7 @@ commands:
         help: Copy the script instead of creating a symbolic link
 
     examples:
-      - recipe link --copy
-      - recipe link /usr/local/bin
+      - recipe link -c ~/.local/bin
 
   - name: unlink
     help: Remove the link to the recipe script
@@ -196,11 +195,10 @@ commands:
     args:
       - name: path
         help: Path to the link
-        default: ${HOME}/.local/bin
+        required: true
 
     examples:
-      - recipe unlink
-      - recipe unlink /usr/local/bin
+      - recipe unlink ~/.local/bin
 
   - name: show
     help: Show the content of a recipe

@@ -23,8 +23,6 @@
 
 - bash 4.0 or higher
 - [gum](https://github.com/charmbracelet/gum)
-- [fd](https://github.com/sharkdp/fd)
-- [rg](https://github.com/BurntSushi/ripgrep)
 - git
 
 
@@ -32,19 +30,21 @@
 
 ### Using recipe
 
+Clone the repository in the recommended location
 ```bash
-# Clone the repository in the recommended location
 git clone git@github.com:alexis-moins/recipe.git ~/.recipe
-
-# Let recipe create the symbolic link for you!
-cd ~/.recipe && RECIPE_INSTALL_DIR=$(pwd) ./recipe link
 ```
 
-The last command creates a symbolic link to the `recipe` script in the `~/.local/bin/` directory. You can also change the link destination path with the optional `path` argument. Finally, if you did not clone the repository in `~/.recipe`, run the don't forget to set the `RECIPE_INSTALL_DIR` environment variable!
+Go into the install directory and let recipe take care of the rest!
+```bash
+RECIPE_INSTALL_DIR=$(pwd) ./recipe link ~/.local/bin
+```
+
+The last command creates a symbolic link to the `recipe` script in the `~/.local/bin/` directory (you can also change the link destination path). Finally, if you did not clone the repository in `~/.recipe`, run the don't forget to set the `RECIPE_INSTALL_DIR` environment variable globally afterwards!
 
 ### Manually
 
-Clone the repository then move the [recipe](recipe) script to `~/.local/bin/` or anywhere in your `PATH`, and ensure it is executable!
+Clone the repository then move the [recipe](recipe) script to anywhere in your `PATH`, and ensure it is executable!
 
 ## Quick Start
 

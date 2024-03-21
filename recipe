@@ -513,7 +513,7 @@ recipe_link_usage() {
   fi
 
   printf "%s\n" "Usage:"
-  printf "  recipe link [PATH] [OPTIONS]\n"
+  printf "  recipe link PATH [OPTIONS]\n"
   printf "  recipe link --help | -h\n"
   echo
 
@@ -538,13 +538,11 @@ recipe_link_usage() {
     # :argument.usage
     printf "  %s\n" "PATH"
     printf "    Path to the link\n"
-    printf "    Default: ${HOME}/.local/bin\n"
     echo
 
     # :command.usage_examples
     printf "%s\n" "Examples:"
-    printf "  recipe link --copy\n"
-    printf "  recipe link /usr/local/bin\n"
+    printf "  recipe link -c ~/.local/bin\n"
     echo
 
   fi
@@ -563,7 +561,7 @@ recipe_unlink_usage() {
   fi
 
   printf "%s\n" "Usage:"
-  printf "  recipe unlink [PATH]\n"
+  printf "  recipe unlink PATH\n"
   printf "  recipe unlink --help | -h\n"
   echo
 
@@ -582,13 +580,11 @@ recipe_unlink_usage() {
     # :argument.usage
     printf "  %s\n" "PATH"
     printf "    Path to the link\n"
-    printf "    Default: ${HOME}/.local/bin\n"
     echo
 
     # :command.usage_examples
     printf "%s\n" "Examples:"
-    printf "  recipe unlink\n"
-    printf "  recipe unlink /usr/local/bin\n"
+    printf "  recipe unlink ~/.local/bin\n"
     echo
 
   fi
@@ -2042,8 +2038,11 @@ recipe_link_parse_requirements() {
     esac
   done
 
-  # :command.default_assignments
-  [[ -n ${args['path']:-} ]] || args['path']="${HOME}/.local/bin"
+  # :command.required_args_filter
+  if [[ -z ${args['path']+x} ]]; then
+    printf "missing required argument: PATH\nusage: recipe link PATH [OPTIONS]\n" >&2
+    exit 1
+  fi
 
 }
 
@@ -2094,8 +2093,11 @@ recipe_unlink_parse_requirements() {
     esac
   done
 
-  # :command.default_assignments
-  [[ -n ${args['path']:-} ]] || args['path']="${HOME}/.local/bin"
+  # :command.required_args_filter
+  if [[ -z ${args['path']+x} ]]; then
+    printf "missing required argument: PATH\nusage: recipe unlink PATH\n" >&2
+    exit 1
+  fi
 
 }
 
