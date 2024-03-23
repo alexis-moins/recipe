@@ -11,7 +11,7 @@
                  |_|         
 ```
 
-![Version](https://img.shields.io/badge/version-0.9.1-blue.svg)
+![Version](https://img.shields.io/badge/version-0.9.2-blue.svg)
 
 </div>
 
@@ -117,9 +117,10 @@ Recipe Commands:
   filter   Interactively filter recipes
 
 Commands:
-  link     Create a link to the recipe script
-  unlink   Remove the link to the recipe script
-  update   Update recipe to the latest version
+  link          Create a link to the recipe script
+  unlink        Remove the link to the recipe script
+  update        Update recipe to the latest version
+  completions   Command line completions
 
 Options:
   --help, -h
