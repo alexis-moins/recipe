@@ -54,6 +54,8 @@ recipe_usage() {
   printf "  %s   Remove the link to the recipe script\n" "unlink     "
   printf "  %s   Update recipe to the latest version\n" "update     "
   printf "  %s   Command line completions\n" "completions"
+  printf "  %s   Show recipe environment variables\n" "env        "
+  printf "  %s   Start an interactive shell\n" "shell      "
   echo
 
   # :command.long_usage
@@ -773,6 +775,79 @@ recipe_completions_usage() {
   fi
 }
 
+# :command.usage
+recipe_env_usage() {
+  if [[ -n $long_usage ]]; then
+    printf "recipe env - Show recipe environment variables\n"
+    echo
+
+  else
+    printf "recipe env - Show recipe environment variables\n"
+    echo
+
+  fi
+
+  printf "%s\n" "Usage:"
+  printf "  recipe env\n"
+  printf "  recipe env --help | -h\n"
+  echo
+
+  # :command.long_usage
+  if [[ -n $long_usage ]]; then
+    printf "%s\n" "Options:"
+
+    # :command.usage_fixed_flags
+    printf "  %s\n" "--help, -h"
+    printf "    Show this help\n"
+    echo
+
+    # :command.usage_examples
+    printf "%s\n" "Examples:"
+    printf "  recipe env\n"
+    echo
+
+  fi
+}
+
+# :command.usage
+recipe_shell_usage() {
+  if [[ -n $long_usage ]]; then
+    printf "recipe shell - Start an interactive shell\n"
+    echo
+
+  else
+    printf "recipe shell - Start an interactive shell\n"
+    echo
+
+  fi
+
+  printf "%s\n" "Usage:"
+  printf "  recipe shell [SHELL]\n"
+  printf "  recipe shell --help | -h\n"
+  echo
+
+  # :command.long_usage
+  if [[ -n $long_usage ]]; then
+    printf "%s\n" "Options:"
+
+    # :command.usage_fixed_flags
+    printf "  %s\n" "--help, -h"
+    printf "    Show this help\n"
+    echo
+
+    # :command.usage_args
+    printf "%s\n" "Arguments:"
+
+    # :argument.usage
+    printf "  %s\n" "SHELL"
+    printf "\n"
+    printf "    Allowed: sh, bash, zsh, fish\n"
+    printf "    Default: $(basename $SHELL)\n"
+    echo
+
+  fi
+}
+
 # :command.normalize_input
 normalize_input() {
   local arg flags
@@ -972,15 +1047,15 @@ send_completions() {
   echo $'      while read -r; do COMPREPLY+=( "$REPLY" ); done < <( compgen -W "$(_recipe_completions_filter "--help -h")" -- "$cur" )'
   echo $'      ;;'
   echo $''
+  echo $'    \'update\'*)'
+  echo $'      while read -r; do COMPREPLY+=( "$REPLY" ); done < <( compgen -W "$(_recipe_completions_filter "--help -h")" -- "$cur" )'
+  echo $'      ;;'
+  echo $''
   echo $'    \'remove\'*)'
   echo $'      while read -r; do COMPREPLY+=( "$REPLY" ); done < <( compgen -W "$(_recipe_completions_filter "--help --yes -h -y")" -- "$cur" )'
   echo $'      ;;'
   echo $''
   echo $'    \'unlink\'*)'
-  echo $'      while read -r; do COMPREPLY+=( "$REPLY" ); done < <( compgen -W "$(_recipe_completions_filter "--help -h")" -- "$cur" )'
-  echo $'      ;;'
-  echo $''
-  echo $'    \'update\'*)'
   echo $'      while read -r; do COMPREPLY+=( "$REPLY" ); done < <( compgen -W "$(_recipe_completions_filter "--help -h")" -- "$cur" )'
   echo $'      ;;'
   echo $''
@@ -996,6 +1071,10 @@ send_completions() {
   echo $'      while read -r; do COMPREPLY+=( "$REPLY" ); done < <( compgen -W "$(_recipe_completions_filter "--help -h")" -- "$cur" )'
   echo $'      ;;'
   echo $''
+  echo $'    \'show\'*)'
+  echo $'      while read -r; do COMPREPLY+=( "$REPLY" ); done < <( compgen -W "$(_recipe_completions_filter "--exec --help -e -h")" -- "$cur" )'
+  echo $'      ;;'
+  echo $''
   echo $'    \'edit\'*)'
   echo $'      while read -r; do COMPREPLY+=( "$REPLY" ); done < <( compgen -W "$(_recipe_completions_filter "--help -h")" -- "$cur" )'
   echo $'      ;;'
@@ -1004,15 +1083,11 @@ send_completions() {
   echo $'      while read -r; do COMPREPLY+=( "$REPLY" ); done < <( compgen -W "$(_recipe_completions_filter "--copy --help -c -h")" -- "$cur" )'
   echo $'      ;;'
   echo $''
-  echo $'    \'show\'*)'
-  echo $'      while read -r; do COMPREPLY+=( "$REPLY" ); done < <( compgen -W "$(_recipe_completions_filter "--exec --help -e -h")" -- "$cur" )'
+  echo $'    \'env\'*)'
+  echo $'      while read -r; do COMPREPLY+=( "$REPLY" ); done < <( compgen -W "$(_recipe_completions_filter "--help -h")" -- "$cur" )'
   echo $'      ;;'
   echo $''
-  echo $'    \'add\'*)'
-  echo $'      while read -r; do COMPREPLY+=( "$REPLY" ); done < <( compgen -W "$(_recipe_completions_filter "--edit --force --help -e -f -h")" -- "$cur" )'
-  echo $'      ;;'
-  echo $''
-  echo $'    \'git\'*)'
+  echo $'    \'dir\'*)'
   echo $'      while read -r; do COMPREPLY+=( "$REPLY" ); done < <( compgen -W "$(_recipe_completions_filter "--help -h")" -- "$cur" )'
   echo $'      ;;'
   echo $''
@@ -1020,8 +1095,12 @@ send_completions() {
   echo $'      while read -r; do COMPREPLY+=( "$REPLY" ); done < <( compgen -W "$(_recipe_completions_filter "--edit --help -e -h")" -- "$cur" )'
   echo $'      ;;'
   echo $''
-  echo $'    \'dir\'*)'
+  echo $'    \'git\'*)'
   echo $'      while read -r; do COMPREPLY+=( "$REPLY" ); done < <( compgen -W "$(_recipe_completions_filter "--help -h")" -- "$cur" )'
+  echo $'      ;;'
+  echo $''
+  echo $'    \'add\'*)'
+  echo $'      while read -r; do COMPREPLY+=( "$REPLY" ); done < <( compgen -W "$(_recipe_completions_filter "--edit --force --help -e -f -h")" -- "$cur" )'
   echo $'      ;;'
   echo $''
   echo $'    \'rm\'*)'
@@ -1033,7 +1112,7 @@ send_completions() {
   echo $'      ;;'
   echo $''
   echo $'    *)'
-  echo $'      while read -r; do COMPREPLY+=( "$REPLY" ); done < <( compgen -W "$(_recipe_completions_filter "--help --version -h -v add clone completions dir doctor edit filter git init link list ls remove rm show unlink update use")" -- "$cur" )'
+  echo $'      while read -r; do COMPREPLY+=( "$REPLY" ); done < <( compgen -W "$(_recipe_completions_filter "--help --version -h -v add clone completions dir doctor edit env filter git init link list ls remove rm show unlink update use")" -- "$cur" )'
   echo $'      ;;'
   echo $''
   echo $'  esac'
@@ -1080,8 +1159,7 @@ recipe_init_command() {
   local auto_confirm="${args[--yes]}"
 
   if [[ -d "${RECIPE_BOOK_DIR}" ]]; then
-
-      if [[ -n "${auto_confirm}" ]] || confirm "Overwrite current recipe book ?"; then
+      if [[ -n "${auto_confirm}" ]] || confirm "Overwrite current recipe book [$(magenta ${RECIPE_BOOK_DIR})] ?"; then
           \rm -rf "${RECIPE_BOOK_DIR}"
       else
           exit 1
@@ -1091,9 +1169,11 @@ recipe_init_command() {
   \mkdir "${RECIPE_BOOK_DIR}"
 
   run_silent pushd "${RECIPE_BOOK_DIR}"
-  run_silent git init
+  git init
 
-  echo -e "$(green ✔) Initialized empty recipe book"
+  git switch -c `date "+%Y%m%d%H%m%S"`
+
+  echo -e "$(green ✔) Created new recipe book"
 
   run_silent popd
 
@@ -1273,10 +1353,12 @@ recipe_clone_command() {
   local url="${args[url]}"
   local auto_confirm="${args[--yes]}"
 
-  if [[ ! -d "${RECIPE_BOOK_DIR}" ]] || [[ -n "${auto_confirm}" ]] || confirm "Overwrite current recipe book?"; then
+  if [[ ! -d "${RECIPE_BOOK_DIR}" ]] || [[ -n "${auto_confirm}" ]] || confirm "Overwrite current recipe book [$(magenta ${RECIPE_BOOK_DIR})] ?"; then
       [[ -d "${RECIPE_BOOK_DIR}" ]] && \rm -rf "${RECIPE_BOOK_DIR}"
 
       git clone "${url}" "${RECIPE_BOOK_DIR}"
+      run_git switch -c `date "+%Y%m%d%H%m%S"`
+
       echo "$(green ✔) Your recipe book is ready"
   fi
 
@@ -1346,11 +1428,11 @@ recipe_show_command() {
 recipe_update_command() {
   # src/update_command.sh
   if [[ ! -d "${RECIPE_INSTALL_DIR}" ]]; then
-      echo "No recipe directory. Check documentation for installation instruction."
+      echo "No recipe install directory. Check documentation for installation instruction."
       exit 1
   fi
 
-  run_git pull
+  git -C "${RECIPE_INSTALL_DIR}" pull
 
 }
 
@@ -1374,6 +1456,24 @@ recipe_filter_command() {
 recipe_completions_command() {
   # src/completions_command.sh
   send_completions
+
+}
+
+# :command.function
+recipe_env_command() {
+  # src/env_command.sh
+  echo "RECIPE_BOOK_DIR=${RECIPE_BOOK_DIR}"
+  echo "RECIPE_INSTALL_DIR=${RECIPE_INSTALL_DIR}"
+
+}
+
+# :command.function
+recipe_shell_command() {
+  # src/shell_command.sh
+  local shell="${args[shell]:-${SHELL}}"
+
+  run_silent pushd "${RECIPE_BOOK_DIR}"
+  exec "${shell}"
 
 }
 
@@ -1540,6 +1640,20 @@ parse_requirements() {
       action="completions"
       shift
       recipe_completions_parse_requirements "$@"
+      shift $#
+      ;;
+
+    env)
+      action="env"
+      shift
+      recipe_env_parse_requirements "$@"
+      shift $#
+      ;;
+
+    shell)
+      action="shell"
+      shift
+      recipe_shell_parse_requirements "$@"
       shift $#
       ;;
 
@@ -2540,9 +2654,111 @@ recipe_completions_parse_requirements() {
 
 }
 
+# :command.parse_requirements
+recipe_env_parse_requirements() {
+  # :command.fixed_flags_filter
+  while [[ $# -gt 0 ]]; do
+    case "${1:-}" in
+      --help | -h)
+        long_usage=yes
+        recipe_env_usage
+        exit
+        ;;
+
+      *)
+        break
+        ;;
+
+    esac
+  done
+
+  # :command.command_filter
+  action="env"
+
+  # :command.parse_requirements_while
+  while [[ $# -gt 0 ]]; do
+    key="$1"
+    case "$key" in
+
+      -?*)
+        printf "invalid option: %s\n" "$key" >&2
+        exit 1
+        ;;
+
+      *)
+        # :command.parse_requirements_case
+        # :command.parse_requirements_case_simple
+        printf "invalid argument: %s\n" "$key" >&2
+        exit 1
+
+        ;;
+
+    esac
+  done
+
+}
+
+# :command.parse_requirements
+recipe_shell_parse_requirements() {
+  # :command.fixed_flags_filter
+  while [[ $# -gt 0 ]]; do
+    case "${1:-}" in
+      --help | -h)
+        long_usage=yes
+        recipe_shell_usage
+        exit
+        ;;
+
+      *)
+        break
+        ;;
+
+    esac
+  done
+
+  # :command.command_filter
+  action="shell"
+
+  # :command.parse_requirements_while
+  while [[ $# -gt 0 ]]; do
+    key="$1"
+    case "$key" in
+
+      -?*)
+        printf "invalid option: %s\n" "$key" >&2
+        exit 1
+        ;;
+
+      *)
+        # :command.parse_requirements_case
+        # :command.parse_requirements_case_simple
+        if [[ -z ${args['shell']+x} ]]; then
+          args['shell']=$1
+          shift
+        else
+          printf "invalid argument: %s\n" "$key" >&2
+          exit 1
+        fi
+
+        ;;
+
+    esac
+  done
+
+  # :command.default_assignments
+  [[ -n ${args['shell']:-} ]] || args['shell']="$(basename $SHELL)"
+
+  # :command.whitelist_filter
+  if [[ -n ${args['shell']:-} ]] && [[ ! ${args['shell']:-} =~ ^(sh|bash|zsh|fish)$ ]]; then
+    printf "%s\n" "shell must be one of: sh, bash, zsh, fish" >&2
+    exit 1
+  fi
+
+}
+
 # :command.initialize
 initialize() {
-  version="0.9.2"
+  version="0.9.4"
   long_usage=''
   set -e
 
@@ -2580,6 +2796,8 @@ run() {
     "dir") recipe_dir_command ;;
     "filter") recipe_filter_command ;;
     "completions") recipe_completions_command ;;
+    "env") recipe_env_command ;;
+    "shell") recipe_shell_command ;;
   esac
 }
 

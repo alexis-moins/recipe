@@ -11,7 +11,7 @@
                  |_|         
 ```
 
-![Version](https://img.shields.io/badge/version-0.9.2-blue.svg)
+![Version](https://img.shields.io/badge/version-0.9.4-blue.svg)
 
 </div>
 
@@ -121,6 +121,8 @@ Commands:
   unlink        Remove the link to the recipe script
   update        Update recipe to the latest version
   completions   Command line completions
+  env           Show recipe environment variables
+  shell         Start an interactive shell
 
 Options:
   --help, -h

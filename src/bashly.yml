@@ -1,6 +1,6 @@
 name: recipe
 help: Store redundant files in a recipe book to use them anytime, anywhere
-version: 0.9.2
+version: 0.9.4
 
 environment_variables:
   - name: editor
@@ -253,3 +253,21 @@ commands:
 
     examples:
       - eval "$(recipe completions)"
+
+  - name: env
+    help: Show recipe environment variables
+
+    examples:
+      - recipe env
+
+  - name: shell
+    help: Start an interactive shell
+
+    args:
+      - name: shell
+        default: $(basename $SHELL)
+        allowed:
+          - sh
+          - bash
+          - zsh
+          - fish
