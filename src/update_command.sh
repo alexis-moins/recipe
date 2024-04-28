@@ -1,5 +1,6 @@
 if [[ ! -d "${RECIPE_INSTALL_DIR}" ]]; then
-    echo "No recipe install directory. Check documentation for installation instruction."
+    warn "No recipe install directory."
+    warn "Check documentation for installation instruction."
     exit 1
 fi
 

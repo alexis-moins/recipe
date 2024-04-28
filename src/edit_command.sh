@@ -17,8 +17,8 @@ local changes="$(run_git diff --name-only "${destination_path}")"
 if [[ -n "${changes}" ]]; then
     run_git add "${destination_path}"
 
-    git_commit "feat: updated ${destination_path}"
-    echo "$(green ✔) Recipe updated"
+    git_commit "update recipe '${destination_path}'"
+    info "Recipe '${recipe}' updated."
 fi
 
 clean_directory "${destination_dir}"

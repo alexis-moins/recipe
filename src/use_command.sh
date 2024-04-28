@@ -10,9 +10,9 @@ if [[ -z "${destination}" ]]; then
     [[ -z "${destination}" ]] && exit 1
 fi
 
-if [[ ! -f "${destination}" ]] || confirm "Overwrite ${destination}?"; then
-    \cp -f "${RECIPE_BOOK_DIR}/${recipe}" "${destination}"
-    echo "$(green ✔) Recipe ${recipe} is ready to use as $(magenta ${destination})"
+if [[ ! -f "${destination}" ]] || confirm "Overwrite local ${destination} file?"; then
+    command cp -f "${RECIPE_BOOK_DIR}/${recipe}" "${destination}"
+    info "Recipe ${recipe} is ready to use."
 
     [[ -n "${edit}" ]] && $EDITOR "${destination}"
 fi

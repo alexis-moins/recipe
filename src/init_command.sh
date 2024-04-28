@@ -8,13 +8,10 @@ if [[ -d "${RECIPE_BOOK_DIR}" ]]; then
     fi
 fi
 
-\mkdir "${RECIPE_BOOK_DIR}"
+command mkdir "${RECIPE_BOOK_DIR}"
 
 run_silent pushd "${RECIPE_BOOK_DIR}"
-git init
+run_silent git init
 
-git switch -c `date "+%Y%m%d%H%m%S"`
-
-echo -e "$(green ✔) Created new recipe book"
-
+info "Created your recipe book."
 run_silent popd

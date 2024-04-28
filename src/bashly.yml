@@ -1,6 +1,6 @@
 name: recipe
 help: Store redundant files in a recipe book to use them anytime, anywhere
-version: 0.9.4
+version: 0.9.5
 
 environment_variables:
   - name: editor
@@ -179,7 +179,7 @@ commands:
     args:
       - name: path
         help: Path to the link
-        required: true
+        default: ${HOME}/.local/bin
 
     flags:
       - short: -c
@@ -187,7 +187,8 @@ commands:
         help: Copy the script instead of creating a symbolic link
 
     examples:
-      - recipe link -c ~/.local/bin
+      - recipe link -c
+      - recipe link /usr/bin
 
   - name: unlink
     help: Remove the link to the recipe script
@@ -195,10 +196,10 @@ commands:
     args:
       - name: path
         help: Path to the link
-        required: true
+        default: ${HOME}/.local/bin
 
     examples:
-      - recipe unlink ~/.local/bin
+      - recipe unlink
 
   - name: show
     help: Show the content of a recipe
@@ -259,15 +260,3 @@ commands:
 
     examples:
       - recipe env
-
-  - name: shell
-    help: Start an interactive shell
-
-    args:
-      - name: shell
-        default: $(basename $SHELL)
-        allowed:
-          - sh
-          - bash
-          - zsh
-          - fish

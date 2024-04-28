@@ -11,7 +11,7 @@
                  |_|         
 ```
 
-![Version](https://img.shields.io/badge/version-0.9.4-blue.svg)
+![Version](https://img.shields.io/badge/version-0.9.5-blue.svg)
 
 </div>
 
@@ -37,7 +37,7 @@ git clone git@github.com:alexis-moins/recipe.git ~/.recipe
 
 Go into the install directory and let recipe take care of the rest!
 ```bash
-RECIPE_INSTALL_DIR=$(pwd) ./recipe link ~/.local/bin
+RECIPE_INSTALL_DIR=$(pwd) ./recipe link
 ```
 
 The last command creates a symbolic link to the `recipe` script in the `~/.local/bin/` directory (you can also change the link destination path). Finally, if you did not clone the repository in `~/.recipe`, run the don't forget to set the `RECIPE_INSTALL_DIR` environment variable globally afterwards!
@@ -80,7 +80,7 @@ recipe git remote add origin git@github.com:awesome-user/recipe-book
 
 If you want to use multiple recipe book, you can always create aliases in your shell
 ```bash
-alias school-book="RECIPE_BOOK_DIR=~/school recipe"
+alias school-book='RECIPE_BOOK_DIR="${HOME}/school" recipe'
 ```
 
 And call the recipe book this way

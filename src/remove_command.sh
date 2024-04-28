@@ -16,7 +16,7 @@ if [[ -n "${auto_confirm}" ]] || confirm "Remove recipe?"; then
     clean_directory "${destination_dir}"
 
     run_git add "${recipe}"
-    git_commit "feat: removed recipe '${recipe}'"
+    git_commit "remove recipe '${recipe}'"
 
-    echo "$(green ✔) Removed recipe ${recipe}"
+    info "Removed recipe ${recipe}."
 fi

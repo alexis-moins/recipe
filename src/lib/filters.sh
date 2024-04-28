@@ -1,12 +1,14 @@
 filter_recipe_book_healthy() {
     if ! recipe_doctor_command &> /dev/null; then
-        echo "$(yellow info:) your recipe book is not correctly setup"
-        echo "$(yellow info:) consider running $(yellow_underlined recipe doctor)"
+        warn "Your recipe book is not correctly setup."
+        warn "Consider running $(yellow_underlined recipe doctor)."
+        echo " "
     fi
 }
 
 filter_recipe_book_not_empty() {
     if [[ -z "$(find_recipe)" ]]; then
-        echo "Your recipe book is empty"
+        error "Your recipe book is empty."
+        echo " "
     fi
 }
