@@ -3,49 +3,57 @@ help: Store redundant files in a recipe book to use them anytime, anywhere
 version: 0.9.5
 
 environment_variables:
-  - name: editor
+  - name: EDITOR
     help: Editor to use for interactive commands
     default: vim
 
-  - name: recipe_book_dir
+  - name: RECIPE_BOOK_DIR
     help: Directory used to store recipes
     default: ${HOME}/recipe-book
 
-  - name: recipe_install_dir
+  - name: RECIPE_INSTALL_DIR
     help: Directory in which recipe was cloned
     default: ${HOME}/.recipe
+
+  - name: RECIPE_SHOW_CMD
+    help: Command used to show reciped
+    default: cat
 
 dependencies:
   - git
   - gum
 
 commands:
+  - name: help
+    help: Show help about a command
+    args:
+    - name: command
+      help: Help subject
+
   - name: init
-    help: Create and setup a new recipe book
+    help: Initialize a recipe book or clone one
     group: Recipe Book
 
+    args:
+      - name: repository
+        help: Remote repository url
+
     flags:
-      - short: -y
-        long: --yes
-        help: Do not ask for confirmation
+      - short: -f
+        long: --force
+        help: Overwrite existing recipe book
 
     examples:
       - recipe init
-      - recipe init -y
-
-  - name: doctor
-    help: Check your recipe book for potential problems
-    group: Recipe Book
-
-    examples:
-      - recipe doctor
+      - recipe init git@github.com:<username>/recipe-book.git
 
   - name: add
     help: Add a new recipe
     group: Recipe
 
     filters:
-      - recipe_book_healthy
+      - recipe_book_is_dir
+      - recipe_book_is_git
 
     args:
       - name: file
@@ -66,7 +74,7 @@ commands:
         help: Overwrite existing recipe
 
     examples:
-      - recipe add -f Dockerfile docker/elixir
+      - recipe add Dockerfile docker/elixir
 
   - name: list
     alias: ls
@@ -74,30 +82,19 @@ commands:
     group: Recipe
 
     filters:
-      - recipe_book_healthy
+      - recipe_book_is_dir
+      - recipe_book_is_git
 
     examples:
       - recipe list
-
-  - name: git
-    help: Access git from your recipe book
-    group: Recipe Book
-
-    catch_all:
-      label: COMMAND
-      help: Command to run inside your recipe book
-      required: true
-
-    examples:
-      - recipe git log
-      - recipe git remote add origin <repo>
 
   - name: use
     help: Use a recipe locally
     group: Recipe
 
     filters:
-      - recipe_book_healthy
+      - recipe_book_is_dir
+      - recipe_book_is_git
       - recipe_book_not_empty
 
     args:
@@ -113,6 +110,10 @@ commands:
         long: --edit
         help: Edit the destination recipe
 
+      - short: -f
+        long: --force
+        help: Overwrite destination file
+
     examples:
       - recipe use
       - recipe use ssh-config ~/.ssh/config
@@ -123,7 +124,8 @@ commands:
     group: Recipe
 
     filters:
-      - recipe_book_healthy
+      - recipe_book_is_dir
+      - recipe_book_is_git
       - recipe_book_not_empty
 
     args:
@@ -131,47 +133,27 @@ commands:
         help: Name of the recipe to remove
         validate: recipe_exists
 
-    flags:
-      - short: -y
-        long: --yes
-        help: Do not ask for confirmation
-
     examples:
       - recipe remove
-      - recipe remove ssh-config --yes
+      - recipe remove ssh-config
 
   - name: edit
     help: Edit a recipe
     group: Recipe
-
-    filters:
-      - recipe_book_healthy
 
     args:
       - name: name
         help: Name of the recipe to edit
         validate: recipe_exists
 
+    filters:
+      - recipe_book_is_dir
+      - recipe_book_is_git
+      - recipe_book_not_empty
+
     examples:
       - recipe edit
       - recipe edit ssh-config
-
-  - name: clone
-    help: Clone a remote git repository
-    group: Recipe Book
-
-    args:
-      - name: url
-        help: Remote repository url
-        required: true
-
-    flags:
-      - short: -y
-        long: --yes
-        help: Do not ask for confirmation
-
-    examples:
-      - 'recipe clone git@github:awesome-user/recipe-book.git --yes'
 
   - name: link
     help: Create a link to the recipe script
@@ -206,7 +188,8 @@ commands:
     group: Recipe
 
     filters:
-      - recipe_book_healthy
+      - recipe_book_is_dir
+      - recipe_book_is_git
       - recipe_book_not_empty
 
     args:
@@ -215,11 +198,11 @@ commands:
         validate: recipe_exists
 
     flags:
-      - short: -e
+      - short: -x
         long: --exec
         arg: executable
-        default: cat
-        help: Executable used to show the recipe
+        default: ${RECIPE_SHOW_CMD}
+        help: Command used to show the recipe
 
     examples:
       - recipe show --exec bat
@@ -228,35 +211,165 @@ commands:
   - name: update
     help: Update recipe to the latest version
 
-  - name: dir
-    help: Show recipe book directory
-    group: Recipe Book
-
-    filters:
-     - recipe_book_healthy
-
-    examples:
-      - recipe dir
-      - cd $(recipe dir)
-
   - name: filter
     help: Interactively filter recipes
     group: Recipe
 
     filters:
-      - recipe_book_healthy
+      - recipe_book_is_dir
+      - recipe_book_is_git
+      - recipe_book_not_empty
 
     examples:
       - recipe filter
 
-  - name: completions
-    help: Command line completions
-
-    examples:
-      - eval "$(recipe completions)"
-
   - name: env
-    help: Show recipe environment variables
+    help: Show environment information
+
+    args:
+      - name: variable
+        help: Name of the environment variable to show
+        allowed: [RECIPE_INSTALL_DIR, RECIPE_BOOK_DIR, RECIPE_SHOW_CMD]
 
     examples:
       - recipe env
+      - recipe env RECIPE_INSTALL_DIR
+
+  - name: sync
+    help: Update your recipe book
+    group: Git
+
+    filters:
+      - recipe_book_is_dir
+      - recipe_book_is_git
+
+    examples:
+      - recipe sync
+
+  - name: status
+    help: Show the status of your recipe book
+    alias: st
+    group: Git
+
+    flags:
+      - short: -s
+        long: --short
+        help: Give the output in a short format
+
+    filters:
+      - recipe_book_is_dir
+      - recipe_book_is_git
+
+    examples:
+      - recipe status
+
+  - name: stage
+    help: Stage files
+    group: Git
+
+    catch_all:
+      label: files
+      help: Files to stage (relative to \$RECIPE_BOOK_DIR)
+
+    filters:
+      - recipe_book_is_dir
+      - recipe_book_is_git
+
+    examples:
+      - recipe stage
+
+  - name: unstage
+    help: Unstage files
+    group: Git
+
+    catch_all:
+      label: files
+      help: Files to unstage (relative to \$RECIPE_BOOK_DIR)
+
+    filters:
+      - recipe_book_is_dir
+      - recipe_book_is_git
+
+    examples:
+      - recipe unstage
+
+  - name: restore
+    help: Restore unstaged files (undo changes)
+    alias: rs
+    group: Git
+
+    catch_all:
+      label: files
+      help: Files to restore (relative to \$RECIPE_BOOK_DIR)
+
+    filters:
+      - recipe_book_is_dir
+      - recipe_book_is_git
+
+    examples:
+      - recipe restore
+
+  - name: diff
+    help: Show diff with last commit
+    group: Git
+
+    catch_all:
+      label: files
+      help: Files to diff (relative to \$RECIPE_BOOK_DIR)
+
+    flags:
+      - short: -s
+        long: --staged
+        help: Only show diff for staged files
+
+    filters:
+      - recipe_book_is_dir
+      - recipe_book_is_git
+
+    examples:
+      - recipe diff
+      - recipe diff --staged
+
+  - name: idiff
+    help: Show interactive diff with last commit
+    group: Git
+
+    flags:
+      - short: -s
+        long: --staged
+        help: Only show diff for staged files
+
+    filters:
+      - recipe_book_is_dir
+      - recipe_book_is_git
+
+    examples:
+      - recipe idiff
+      - recipe idiff --staged
+
+  - name: commit
+    help: Commit changes
+    group: Git
+    alias: ci
+
+    args:
+      - name: message
+        help: Commit message
+
+    filters:
+      - recipe_book_is_dir
+      - recipe_book_is_git
+
+    examples:
+      - recipe commit
+
+  - name: cd
+    help: Navigate to your recipe book in a new shell
+    group: Recipe Book
+
+    filters:
+      - recipe_book_is_dir
+      - recipe_book_is_git
+
+    examples:
+      - recipe cd

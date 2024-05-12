@@ -1,17 +1,22 @@
-local auto_confirm="${args[--yes]}"
+local force="${args[--force]}"
+local repository="${args[repository]}"
 
 if [[ -d "${RECIPE_BOOK_DIR}" ]]; then
-    if [[ -n "${auto_confirm}" ]] || confirm "Overwrite current recipe book [$(magenta ${RECIPE_BOOK_DIR})] ?"; then
-        \rm -rf "${RECIPE_BOOK_DIR}"
-    else
+    if [[ -z "${force}" ]]; then
+        error "\$RECIPE_BOOK_DIR is not empty"
         exit 1
+    else
+        command rm -rf "${RECIPE_BOOK_DIR}"
     fi
 fi
 
-command mkdir "${RECIPE_BOOK_DIR}"
+if [[ -n "${repository}" ]]; then
+    command "${deps[git]}" clone "${repository}" "${RECIPE_BOOK_DIR}"
+    success "cloned remote recipe book"
+else
+    command mkdir -p "${RECIPE_BOOK_DIR}"
+    run_git init
 
-run_silent pushd "${RECIPE_BOOK_DIR}"
-run_silent git init
+    success "initialized empty recipe book"
+fi
 
-info "Created your recipe book."
-run_silent popd

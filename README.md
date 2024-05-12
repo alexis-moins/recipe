@@ -78,12 +78,12 @@ recipe git remote add origin git@github.com:awesome-user/recipe-book
 
 ## 📦 Multiple recipe books
 
-If you want to use multiple recipe book, you can always create aliases in your shell
+If you want to use multiple recipe book, you can always create aliases in your shell.
 ```bash
 alias school-book='RECIPE_BOOK_DIR="${HOME}/school" recipe'
 ```
 
-And call the recipe book this way
+And call the recipe book this way:
 ```bash
 school-book use javascript/singleton
 ```
