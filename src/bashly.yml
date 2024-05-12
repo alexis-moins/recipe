@@ -1,10 +1,10 @@
 name: recipe
-help: Store redundant files in a recipe book to use them anytime, anywhere
-version: 0.9.5
+help: store redundant files in a recipe book to use them anytime, anywhere
+version: 1.6.0
 
 environment_variables:
   - name: EDITOR
-    help: Editor to use for interactive commands
+    help: Editor used for interactive commands
     default: vim
 
   - name: RECIPE_BOOK_DIR
@@ -12,7 +12,7 @@ environment_variables:
     default: ${HOME}/recipe-book
 
   - name: RECIPE_INSTALL_DIR
-    help: Directory in which recipe was cloned
+    help: Directory where the reporitory was cloned
     default: ${HOME}/.recipe
 
   - name: RECIPE_SHOW_CMD
@@ -205,7 +205,7 @@ commands:
         help: Command used to show the recipe
 
     examples:
-      - recipe show --exec bat
+      - recipe show -x bat
       - recipe show docker/express-js
 
   - name: update
