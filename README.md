@@ -1,7 +1,7 @@
 
 <div align='center'>
 
-![Version](https://img.shields.io/badge/version-1.6.0-blue.svg)
+![Version](https://img.shields.io/badge/dynamic/yaml?url=https%3A%2F%2Fraw.githubusercontent.com%2Falexis-moins%2Fpm%2Fmain%2Fsrc%2Fbashly.yml&query=%24.version&label=version)
 
 </div>
 
