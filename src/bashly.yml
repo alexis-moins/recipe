@@ -1,6 +1,6 @@
 name: recipe
 help: store redundant files in a recipe book to use them anytime, anywhere
-version: 1.6.0
+version: 1.7.0
 
 environment_variables:
   - name: EDITOR

@@ -1,7 +1,7 @@
 
 <div align='center'>
 
-![Version](https://img.shields.io/badge/version-1.6.0-blue.svg)
+![Version](https://img.shields.io/badge/version-1.7.0-blue.svg)
 
 </div>
 
@@ -107,14 +107,13 @@ Recipe Commands:
   filter    Interactively filter recipes
 
 Git Commands:
-  sync      Update your recipe book
   status    Show the status of your recipe book
   stage     Stage files
   unstage   Unstage files
   restore   Restore unstaged files (undo changes)
-  diff      Show diff with last commit
-  idiff     Show interactive diff with last commit
+  diff      Show interactive diff with last commit
   commit    Commit changes
+  git       Run git commands within your recipe book
 
 Options:
   --help, -h
