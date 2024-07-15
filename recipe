@@ -49,14 +49,13 @@ recipe_usage() {
   printf "  %s   Interactively filter recipes\n" "filter "
   echo
   printf "%s\n" "Git Commands:"
-  printf "  %s   Update your recipe book\n" "sync   "
   printf "  %s   Show the status of your recipe book\n" "status "
   printf "  %s   Stage files\n" "stage  "
   printf "  %s   Unstage files\n" "unstage"
   printf "  %s   Restore unstaged files (undo changes)\n" "restore"
-  printf "  %s   Show diff with last commit\n" "diff   "
-  printf "  %s   Show interactive diff with last commit\n" "idiff  "
+  printf "  %s   Show interactive diff with last commit\n" "diff   "
   printf "  %s   Commit changes\n" "commit "
+  printf "  %s   Run git commands within your recipe book\n" "git    "
   echo
 
   if [[ -n $long_usage ]]; then
@@ -87,7 +86,7 @@ recipe_usage() {
     echo
 
     printf "  %s\n" "RECIPE_SHOW_CMD"
-    printf "    Command used to show reciped\n"
+    printf "    Command used to show recipes\n"
     printf "    Default: cat\n"
     echo
 
@@ -472,7 +471,7 @@ recipe_show_usage() {
   if [[ -n $long_usage ]]; then
     printf "%s\n" "Options:"
 
-    printf "  %s\n" "--exec, -x EXECUTABLE"
+    printf "  %s\n" "--exec, -e EXECUTABLE"
     printf "    Command used to show the recipe\n"
     printf "    Default: ${RECIPE_SHOW_CMD}\n"
     echo
@@ -488,7 +487,7 @@ recipe_show_usage() {
     echo
 
     printf "%s\n" "Examples:"
-    printf "  recipe show -x bat\n"
+    printf "  recipe show -e bat\n"
     printf "  recipe show docker/express-js\n"
     echo
 
@@ -584,36 +583,6 @@ recipe_env_usage() {
     printf "%s\n" "Examples:"
     printf "  recipe env\n"
     printf "  recipe env RECIPE_INSTALL_DIR\n"
-    echo
-
-  fi
-}
-
-recipe_sync_usage() {
-  if [[ -n $long_usage ]]; then
-    printf "recipe sync - Update your recipe book\n"
-    echo
-
-  else
-    printf "recipe sync - Update your recipe book\n"
-    echo
-
-  fi
-
-  printf "%s\n" "Usage:"
-  printf "  recipe sync\n"
-  printf "  recipe sync --help | -h\n"
-  echo
-
-  if [[ -n $long_usage ]]; then
-    printf "%s\n" "Options:"
-
-    printf "  %s\n" "--help, -h"
-    printf "    Show this help\n"
-    echo
-
-    printf "%s\n" "Examples:"
-    printf "  recipe sync\n"
     echo
 
   fi
@@ -769,17 +738,17 @@ recipe_restore_usage() {
 
 recipe_diff_usage() {
   if [[ -n $long_usage ]]; then
-    printf "recipe diff - Show diff with last commit\n"
+    printf "recipe diff - Show interactive diff with last commit\n"
     echo
 
   else
-    printf "recipe diff - Show diff with last commit\n"
+    printf "recipe diff - Show interactive diff with last commit\n"
     echo
 
   fi
 
   printf "%s\n" "Usage:"
-  printf "  recipe diff [OPTIONS] [FILES...]\n"
+  printf "  recipe diff [OPTIONS]\n"
   printf "  recipe diff --help | -h\n"
   echo
 
@@ -794,50 +763,9 @@ recipe_diff_usage() {
     printf "    Show this help\n"
     echo
 
-    printf "%s\n" "Arguments:"
-
-    echo "  FILES..."
-    printf "    Files to diff (relative to \$RECIPE_BOOK_DIR)\n"
-    echo
-
     printf "%s\n" "Examples:"
     printf "  recipe diff\n"
     printf "  recipe diff --staged\n"
-    echo
-
-  fi
-}
-
-recipe_idiff_usage() {
-  if [[ -n $long_usage ]]; then
-    printf "recipe idiff - Show interactive diff with last commit\n"
-    echo
-
-  else
-    printf "recipe idiff - Show interactive diff with last commit\n"
-    echo
-
-  fi
-
-  printf "%s\n" "Usage:"
-  printf "  recipe idiff [OPTIONS]\n"
-  printf "  recipe idiff --help | -h\n"
-  echo
-
-  if [[ -n $long_usage ]]; then
-    printf "%s\n" "Options:"
-
-    printf "  %s\n" "--staged, -s"
-    printf "    Only show diff for staged files\n"
-    echo
-
-    printf "  %s\n" "--help, -h"
-    printf "    Show this help\n"
-    echo
-
-    printf "%s\n" "Examples:"
-    printf "  recipe idiff\n"
-    printf "  recipe idiff --staged\n"
     echo
 
   fi
@@ -912,6 +840,42 @@ recipe_cd_usage() {
   fi
 }
 
+recipe_git_usage() {
+  if [[ -n $long_usage ]]; then
+    printf "recipe git - Run git commands within your recipe book\n"
+    echo
+
+  else
+    printf "recipe git - Run git commands within your recipe book\n"
+    echo
+
+  fi
+
+  printf "%s\n" "Usage:"
+  printf "  recipe git COMMANDS...\n"
+  printf "  recipe git --help | -h\n"
+  echo
+
+  if [[ -n $long_usage ]]; then
+    printf "%s\n" "Options:"
+
+    printf "  %s\n" "--help, -h"
+    printf "    Show this help\n"
+    echo
+
+    printf "%s\n" "Arguments:"
+
+    echo "  COMMANDS..."
+    printf "    Commands\n"
+    echo
+
+    printf "%s\n" "Examples:"
+    printf "  recipe git switch -c <new-branch>\n"
+    echo
+
+  fi
+}
+
 normalize_input() {
   local arg flags
 
@@ -978,14 +942,14 @@ filter_recipe() {
     echo "${recipes}" | gum filter --placeholder "Select a recipe..."
 }
 
-filter_recipe_book_is_dir() {
+filter_recipe_book_directory() {
     if [[ ! -d "${RECIPE_BOOK_DIR}" ]]; then
         error "your recipe book is missing at \$RECIPE_BOOK_DIR"
         error "consider using $(red_underlined "recipe init")"
     fi
 }
 
-filter_recipe_book_is_git() {
+filter_recipe_book_git() {
     if [[ ! -d "${RECIPE_BOOK_DIR}/.git" ]]; then
         error "your recipe book is not a git repository"
         error "consider using $(yellow_underlined "recipe init")"
@@ -1153,7 +1117,7 @@ recipe_add_command() {
   [[ -n "${edit}" ]] && command "${EDITOR}" "${destination_path}"
 
   if [[ -f "${destination_path}" ]]; then
-      success "new recipe added"
+      success "added new recipe ${recipe}"
   else
       clean_directory "${destination_dir}"
       error "recipe not added"
@@ -1169,7 +1133,7 @@ recipe_list_command() {
 
 recipe_use_command() {
   local recipe="${args[recipe]}"
-  local destination="${args[destination]:-$(basename "${recipe}")}"
+  local destination="${args[destination]}"
 
   local edit="${args[--edit]}"
   local force="${args[--force]}"
@@ -1177,8 +1141,15 @@ recipe_use_command() {
   if [[ -z "${recipe}" ]]; then
       recipe="$(filter_recipe)"
 
-      [[ -z "${recipe}" ]] && exit 0
-      destination="$(basename "${recipe}")"
+      [[ -z "${recipe}" ]] && exit 1
+  fi
+
+  if [[ -z "${destination}" ]]; then
+      placeholder="$(basename "${recipe}")"
+
+      destination="$(command "${deps[gum]}" input --placeholder="recipe=${recipe}" --width=0 --prompt="◉ Destination: " --no-show-help)"
+
+      [[ -z "${destination}" ]] && exit 1
   fi
 
   if [[ -f "${destination}" ]] && [[ -z "${force}" ]]; then
@@ -1186,8 +1157,14 @@ recipe_use_command() {
       exit 1
   fi
 
+  destination_dir="$(dirname "${destination}")"
+
+  if [[ ! "${destination_dir}" == '.' ]] && [[ ! -d "${destination_dir}" ]]; then
+      command mkdir -p "${destination_dir}"
+  fi
+
   command cp -f "${RECIPE_BOOK_DIR}/${recipe}" "${destination}"
-  success "recipe ${recipe} is ready to use"
+  success "recipe ${destination} is ready to use"
 
   [[ -n "${edit}" ]] && command "${EDITOR}" "${destination}"
 
@@ -1315,11 +1292,6 @@ recipe_env_command() {
 
 }
 
-recipe_sync_command() {
-  run_git pull --rebase && run_git push
-
-}
-
 recipe_status_command() {
   local short="${args[--short]}"
 
@@ -1397,26 +1369,6 @@ recipe_restore_command() {
 }
 
 recipe_diff_command() {
-  local files="${other_args[*]}"
-  local staged="${args[--staged]}"
-
-  if [[ -n "${files}" ]]; then
-      if [[ -n "${staged}" ]]; then
-          run_git diff --staged ${files}
-      else
-          run_git diff ${files}
-      fi
-  else
-      if [[ -z "${staged}" ]]; then
-          run_git diff
-      else
-          run_git diff --staged
-      fi
-  fi
-
-}
-
-recipe_idiff_command() {
   local staged="${args[--staged]}"
 
   if [[ -n "${staged}" ]]; then
@@ -1440,6 +1392,11 @@ recipe_commit_command() {
 
 recipe_cd_command() {
   command cd "${RECIPE_BOOK_DIR}" && command "${SHELL}"
+
+}
+
+recipe_git_command() {
+  run_git ${other_args[*]}
 
 }
 
@@ -1585,13 +1542,6 @@ parse_requirements() {
       shift $#
       ;;
 
-    sync)
-      action="sync"
-      shift
-      recipe_sync_parse_requirements "$@"
-      shift $#
-      ;;
-
     status | st)
       action="status"
       shift
@@ -1627,13 +1577,6 @@ parse_requirements() {
       shift $#
       ;;
 
-    idiff)
-      action="idiff"
-      shift
-      recipe_idiff_parse_requirements "$@"
-      shift $#
-      ;;
-
     commit | ci)
       action="commit"
       shift
@@ -1645,6 +1588,13 @@ parse_requirements() {
       action="cd"
       shift
       recipe_cd_parse_requirements "$@"
+      shift $#
+      ;;
+
+    git)
+      action="git"
+      shift
+      recipe_git_parse_requirements "$@"
       shift $#
       ;;
 
@@ -1845,13 +1795,13 @@ recipe_add_parse_requirements() {
     exit 1
   fi
 
-  filter_error=$(filter_recipe_book_is_dir)
+  filter_error=$(filter_recipe_book_directory)
   if [[ -n $filter_error ]]; then
     echo "$filter_error" >&2
     exit 1
   fi
 
-  filter_error=$(filter_recipe_book_is_git)
+  filter_error=$(filter_recipe_book_git)
   if [[ -n $filter_error ]]; then
     echo "$filter_error" >&2
     exit 1
@@ -1897,13 +1847,13 @@ recipe_list_parse_requirements() {
     esac
   done
 
-  filter_error=$(filter_recipe_book_is_dir)
+  filter_error=$(filter_recipe_book_directory)
   if [[ -n $filter_error ]]; then
     echo "$filter_error" >&2
     exit 1
   fi
 
-  filter_error=$(filter_recipe_book_is_git)
+  filter_error=$(filter_recipe_book_git)
   if [[ -n $filter_error ]]; then
     echo "$filter_error" >&2
     exit 1
@@ -1974,13 +1924,13 @@ recipe_use_parse_requirements() {
     exit 1
   fi
 
-  filter_error=$(filter_recipe_book_is_dir)
+  filter_error=$(filter_recipe_book_directory)
   if [[ -n $filter_error ]]; then
     echo "$filter_error" >&2
     exit 1
   fi
 
-  filter_error=$(filter_recipe_book_is_git)
+  filter_error=$(filter_recipe_book_git)
   if [[ -n $filter_error ]]; then
     echo "$filter_error" >&2
     exit 1
@@ -2042,13 +1992,13 @@ recipe_remove_parse_requirements() {
     exit 1
   fi
 
-  filter_error=$(filter_recipe_book_is_dir)
+  filter_error=$(filter_recipe_book_directory)
   if [[ -n $filter_error ]]; then
     echo "$filter_error" >&2
     exit 1
   fi
 
-  filter_error=$(filter_recipe_book_is_git)
+  filter_error=$(filter_recipe_book_git)
   if [[ -n $filter_error ]]; then
     echo "$filter_error" >&2
     exit 1
@@ -2110,13 +2060,13 @@ recipe_edit_parse_requirements() {
     exit 1
   fi
 
-  filter_error=$(filter_recipe_book_is_dir)
+  filter_error=$(filter_recipe_book_directory)
   if [[ -n $filter_error ]]; then
     echo "$filter_error" >&2
     exit 1
   fi
 
-  filter_error=$(filter_recipe_book_is_git)
+  filter_error=$(filter_recipe_book_git)
   if [[ -n $filter_error ]]; then
     echo "$filter_error" >&2
     exit 1
@@ -2253,14 +2203,14 @@ recipe_show_parse_requirements() {
     key="$1"
     case "$key" in
 
-      --exec | -x)
+      --exec | -e)
 
         if [[ -n ${2+x} ]]; then
           args['--exec']="$2"
           shift
           shift
         else
-          printf "%s\n" "--exec requires an argument: --exec, -x EXECUTABLE" >&2
+          printf "%s\n" "--exec requires an argument: --exec, -e EXECUTABLE" >&2
           exit 1
         fi
         ;;
@@ -2292,13 +2242,13 @@ recipe_show_parse_requirements() {
     exit 1
   fi
 
-  filter_error=$(filter_recipe_book_is_dir)
+  filter_error=$(filter_recipe_book_directory)
   if [[ -n $filter_error ]]; then
     echo "$filter_error" >&2
     exit 1
   fi
 
-  filter_error=$(filter_recipe_book_is_git)
+  filter_error=$(filter_recipe_book_git)
   if [[ -n $filter_error ]]; then
     echo "$filter_error" >&2
     exit 1
@@ -2390,13 +2340,13 @@ recipe_filter_parse_requirements() {
     esac
   done
 
-  filter_error=$(filter_recipe_book_is_dir)
+  filter_error=$(filter_recipe_book_directory)
   if [[ -n $filter_error ]]; then
     echo "$filter_error" >&2
     exit 1
   fi
 
-  filter_error=$(filter_recipe_book_is_git)
+  filter_error=$(filter_recipe_book_git)
   if [[ -n $filter_error ]]; then
     echo "$filter_error" >&2
     exit 1
@@ -2460,58 +2410,6 @@ recipe_env_parse_requirements() {
 
 }
 
-recipe_sync_parse_requirements() {
-
-  while [[ $# -gt 0 ]]; do
-    case "${1:-}" in
-      --help | -h)
-        long_usage=yes
-        recipe_sync_usage
-        exit
-        ;;
-
-      *)
-        break
-        ;;
-
-    esac
-  done
-
-  action="sync"
-
-  while [[ $# -gt 0 ]]; do
-    key="$1"
-    case "$key" in
-
-      -?*)
-        printf "invalid option: %s\n" "$key" >&2
-        exit 1
-        ;;
-
-      *)
-
-        printf "invalid argument: %s\n" "$key" >&2
-        exit 1
-
-        ;;
-
-    esac
-  done
-
-  filter_error=$(filter_recipe_book_is_dir)
-  if [[ -n $filter_error ]]; then
-    echo "$filter_error" >&2
-    exit 1
-  fi
-
-  filter_error=$(filter_recipe_book_is_git)
-  if [[ -n $filter_error ]]; then
-    echo "$filter_error" >&2
-    exit 1
-  fi
-
-}
-
 recipe_status_parse_requirements() {
 
   while [[ $# -gt 0 ]]; do
@@ -2556,13 +2454,13 @@ recipe_status_parse_requirements() {
     esac
   done
 
-  filter_error=$(filter_recipe_book_is_dir)
+  filter_error=$(filter_recipe_book_directory)
   if [[ -n $filter_error ]]; then
     echo "$filter_error" >&2
     exit 1
   fi
 
-  filter_error=$(filter_recipe_book_is_git)
+  filter_error=$(filter_recipe_book_git)
   if [[ -n $filter_error ]]; then
     echo "$filter_error" >&2
     exit 1
@@ -2614,13 +2512,13 @@ recipe_stage_parse_requirements() {
     esac
   done
 
-  filter_error=$(filter_recipe_book_is_dir)
+  filter_error=$(filter_recipe_book_directory)
   if [[ -n $filter_error ]]; then
     echo "$filter_error" >&2
     exit 1
   fi
 
-  filter_error=$(filter_recipe_book_is_git)
+  filter_error=$(filter_recipe_book_git)
   if [[ -n $filter_error ]]; then
     echo "$filter_error" >&2
     exit 1
@@ -2672,13 +2570,13 @@ recipe_unstage_parse_requirements() {
     esac
   done
 
-  filter_error=$(filter_recipe_book_is_dir)
+  filter_error=$(filter_recipe_book_directory)
   if [[ -n $filter_error ]]; then
     echo "$filter_error" >&2
     exit 1
   fi
 
-  filter_error=$(filter_recipe_book_is_git)
+  filter_error=$(filter_recipe_book_git)
   if [[ -n $filter_error ]]; then
     echo "$filter_error" >&2
     exit 1
@@ -2730,13 +2628,13 @@ recipe_restore_parse_requirements() {
     esac
   done
 
-  filter_error=$(filter_recipe_book_is_dir)
+  filter_error=$(filter_recipe_book_directory)
   if [[ -n $filter_error ]]; then
     echo "$filter_error" >&2
     exit 1
   fi
 
-  filter_error=$(filter_recipe_book_is_git)
+  filter_error=$(filter_recipe_book_git)
   if [[ -n $filter_error ]]; then
     echo "$filter_error" >&2
     exit 1
@@ -2773,70 +2671,6 @@ recipe_diff_parse_requirements() {
         shift
         ;;
 
-      --)
-        shift
-        other_args+=("$@")
-        break
-        ;;
-
-      -?*)
-        other_args+=("$1")
-        shift
-        ;;
-
-      *)
-
-        other_args+=("$1")
-        shift
-
-        ;;
-
-    esac
-  done
-
-  filter_error=$(filter_recipe_book_is_dir)
-  if [[ -n $filter_error ]]; then
-    echo "$filter_error" >&2
-    exit 1
-  fi
-
-  filter_error=$(filter_recipe_book_is_git)
-  if [[ -n $filter_error ]]; then
-    echo "$filter_error" >&2
-    exit 1
-  fi
-
-}
-
-recipe_idiff_parse_requirements() {
-
-  while [[ $# -gt 0 ]]; do
-    case "${1:-}" in
-      --help | -h)
-        long_usage=yes
-        recipe_idiff_usage
-        exit
-        ;;
-
-      *)
-        break
-        ;;
-
-    esac
-  done
-
-  action="idiff"
-
-  while [[ $# -gt 0 ]]; do
-    key="$1"
-    case "$key" in
-
-      --staged | -s)
-
-        args['--staged']=1
-        shift
-        ;;
-
       -?*)
         printf "invalid option: %s\n" "$key" >&2
         exit 1
@@ -2852,13 +2686,13 @@ recipe_idiff_parse_requirements() {
     esac
   done
 
-  filter_error=$(filter_recipe_book_is_dir)
+  filter_error=$(filter_recipe_book_directory)
   if [[ -n $filter_error ]]; then
     echo "$filter_error" >&2
     exit 1
   fi
 
-  filter_error=$(filter_recipe_book_is_git)
+  filter_error=$(filter_recipe_book_git)
   if [[ -n $filter_error ]]; then
     echo "$filter_error" >&2
     exit 1
@@ -2909,13 +2743,13 @@ recipe_commit_parse_requirements() {
     esac
   done
 
-  filter_error=$(filter_recipe_book_is_dir)
+  filter_error=$(filter_recipe_book_directory)
   if [[ -n $filter_error ]]; then
     echo "$filter_error" >&2
     exit 1
   fi
 
-  filter_error=$(filter_recipe_book_is_git)
+  filter_error=$(filter_recipe_book_git)
   if [[ -n $filter_error ]]; then
     echo "$filter_error" >&2
     exit 1
@@ -2961,13 +2795,76 @@ recipe_cd_parse_requirements() {
     esac
   done
 
-  filter_error=$(filter_recipe_book_is_dir)
+  filter_error=$(filter_recipe_book_directory)
   if [[ -n $filter_error ]]; then
     echo "$filter_error" >&2
     exit 1
   fi
 
-  filter_error=$(filter_recipe_book_is_git)
+  filter_error=$(filter_recipe_book_git)
+  if [[ -n $filter_error ]]; then
+    echo "$filter_error" >&2
+    exit 1
+  fi
+
+}
+
+recipe_git_parse_requirements() {
+
+  while [[ $# -gt 0 ]]; do
+    case "${1:-}" in
+      --help | -h)
+        long_usage=yes
+        recipe_git_usage
+        exit
+        ;;
+
+      *)
+        break
+        ;;
+
+    esac
+  done
+
+  action="git"
+
+  while [[ $# -gt 0 ]]; do
+    key="$1"
+    case "$key" in
+
+      --)
+        shift
+        other_args+=("$@")
+        break
+        ;;
+
+      -?*)
+        other_args+=("$1")
+        shift
+        ;;
+
+      *)
+
+        other_args+=("$1")
+        shift
+
+        ;;
+
+    esac
+  done
+
+  if [[ ${#other_args[@]} -eq 0 ]]; then
+    printf "missing required argument: COMMANDS...\nusage: recipe git COMMANDS...\n" >&2
+    exit 1
+  fi
+
+  filter_error=$(filter_recipe_book_directory)
+  if [[ -n $filter_error ]]; then
+    echo "$filter_error" >&2
+    exit 1
+  fi
+
+  filter_error=$(filter_recipe_book_git)
   if [[ -n $filter_error ]]; then
     echo "$filter_error" >&2
     exit 1
@@ -2976,7 +2873,7 @@ recipe_cd_parse_requirements() {
 }
 
 initialize() {
-  version="1.0.0"
+  version="1.7.0"
   long_usage=''
   set -e
 
@@ -3010,15 +2907,14 @@ run() {
     "update") recipe_update_command ;;
     "filter") recipe_filter_command ;;
     "env") recipe_env_command ;;
-    "sync") recipe_sync_command ;;
     "status") recipe_status_command ;;
     "stage") recipe_stage_command ;;
     "unstage") recipe_unstage_command ;;
     "restore") recipe_restore_command ;;
     "diff") recipe_diff_command ;;
-    "idiff") recipe_idiff_command ;;
     "commit") recipe_commit_command ;;
     "cd") recipe_cd_command ;;
+    "git") recipe_git_command ;;
   esac
 }
 

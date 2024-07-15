@@ -1,6 +1,6 @@
 name: recipe
 help: store redundant files in a recipe book to use them anytime, anywhere
-version: 1.6.0
+version: 1.7.0
 
 environment_variables:
   - name: EDITOR
@@ -52,8 +52,8 @@ commands:
     group: Recipe
 
     filters:
-      - recipe_book_is_dir
-      - recipe_book_is_git
+      - recipe_book_directory
+      - recipe_book_git
 
     args:
       - name: file
@@ -82,8 +82,8 @@ commands:
     group: Recipe
 
     filters:
-      - recipe_book_is_dir
-      - recipe_book_is_git
+      - recipe_book_directory
+      - recipe_book_git
 
     examples:
       - recipe list
@@ -93,8 +93,8 @@ commands:
     group: Recipe
 
     filters:
-      - recipe_book_is_dir
-      - recipe_book_is_git
+      - recipe_book_directory
+      - recipe_book_git
       - recipe_book_not_empty
 
     args:
@@ -124,8 +124,8 @@ commands:
     group: Recipe
 
     filters:
-      - recipe_book_is_dir
-      - recipe_book_is_git
+      - recipe_book_directory
+      - recipe_book_git
       - recipe_book_not_empty
 
     args:
@@ -147,8 +147,8 @@ commands:
         validate: recipe_exists
 
     filters:
-      - recipe_book_is_dir
-      - recipe_book_is_git
+      - recipe_book_directory
+      - recipe_book_git
       - recipe_book_not_empty
 
     examples:
@@ -188,8 +188,8 @@ commands:
     group: Recipe
 
     filters:
-      - recipe_book_is_dir
-      - recipe_book_is_git
+      - recipe_book_directory
+      - recipe_book_git
       - recipe_book_not_empty
 
     args:
@@ -216,8 +216,8 @@ commands:
     group: Recipe
 
     filters:
-      - recipe_book_is_dir
-      - recipe_book_is_git
+      - recipe_book_directory
+      - recipe_book_git
       - recipe_book_not_empty
 
     examples:
@@ -235,17 +235,6 @@ commands:
       - recipe env
       - recipe env RECIPE_INSTALL_DIR
 
-  - name: sync
-    help: Update your recipe book
-    group: Git
-
-    filters:
-      - recipe_book_is_dir
-      - recipe_book_is_git
-
-    examples:
-      - recipe sync
-
   - name: status
     help: Show the status of your recipe book
     alias: st
@@ -257,8 +246,8 @@ commands:
         help: Give the output in a short format
 
     filters:
-      - recipe_book_is_dir
-      - recipe_book_is_git
+      - recipe_book_directory
+      - recipe_book_git
 
     examples:
       - recipe status
@@ -272,8 +261,8 @@ commands:
       help: Files to stage (relative to \$RECIPE_BOOK_DIR)
 
     filters:
-      - recipe_book_is_dir
-      - recipe_book_is_git
+      - recipe_book_directory
+      - recipe_book_git
 
     examples:
       - recipe stage
@@ -287,8 +276,8 @@ commands:
       help: Files to unstage (relative to \$RECIPE_BOOK_DIR)
 
     filters:
-      - recipe_book_is_dir
-      - recipe_book_is_git
+      - recipe_book_directory
+      - recipe_book_git
 
     examples:
       - recipe unstage
@@ -303,34 +292,13 @@ commands:
       help: Files to restore (relative to \$RECIPE_BOOK_DIR)
 
     filters:
-      - recipe_book_is_dir
-      - recipe_book_is_git
+      - recipe_book_directory
+      - recipe_book_git
 
     examples:
       - recipe restore
 
   - name: diff
-    help: Show diff with last commit
-    group: Git
-
-    catch_all:
-      label: files
-      help: Files to diff (relative to \$RECIPE_BOOK_DIR)
-
-    flags:
-      - short: -s
-        long: --staged
-        help: Only show diff for staged files
-
-    filters:
-      - recipe_book_is_dir
-      - recipe_book_is_git
-
-    examples:
-      - recipe diff
-      - recipe diff --staged
-
-  - name: idiff
     help: Show interactive diff with last commit
     group: Git
 
@@ -340,12 +308,12 @@ commands:
         help: Only show diff for staged files
 
     filters:
-      - recipe_book_is_dir
-      - recipe_book_is_git
+      - recipe_book_directory
+      - recipe_book_git
 
     examples:
-      - recipe idiff
-      - recipe idiff --staged
+      - recipe diff
+      - recipe diff --staged
 
   - name: commit
     help: Commit changes
@@ -357,8 +325,8 @@ commands:
         help: Commit message
 
     filters:
-      - recipe_book_is_dir
-      - recipe_book_is_git
+      - recipe_book_directory
+      - recipe_book_git
 
     examples:
       - recipe commit
@@ -368,8 +336,25 @@ commands:
     group: Recipe Book
 
     filters:
-      - recipe_book_is_dir
-      - recipe_book_is_git
+      - recipe_book_directory
+      - recipe_book_git
 
     examples:
       - recipe cd
+
+  - name: git
+    help: Run git commands within your recipe book
+    group: Git
+
+    catch_all:
+      label: commands
+      help: Commands
+      required: true
+
+    filters:
+      - recipe_book_directory
+      - recipe_book_git
+
+    examples:
+      - recipe git switch -c <new-branch>
+
