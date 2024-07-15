@@ -29,7 +29,7 @@ command cp "${file}" "${destination_path}"
 [[ -n "${edit}" ]] && command "${EDITOR}" "${destination_path}"
 
 if [[ -f "${destination_path}" ]]; then
-    success "new recipe added"
+    success "added new recipe ${recipe}"
 else
     clean_directory "${destination_dir}"
     error "recipe not added"

@@ -23,12 +23,14 @@ Clone the repository in the recommended location
 git clone git@github.com:alexis-moins/recipe.git ~/.recipe
 ```
 
-Go into the install directory and let recipe take care of the rest!
+Go into the install directory and execute the [install](install) script:
 ```bash
-RECIPE_INSTALL_DIR=$(pwd) ./recipe link
+./install
 ```
 
-The last command creates a symbolic link to the `recipe` script in the `~/.local/bin/` directory (you can also change the link destination path). Finally, if you did not clone the repository in `~/.recipe`, run the don't forget to set the `RECIPE_INSTALL_DIR` environment variable globally afterwards!
+The last command creates a symbolic link to the `recipe` script in the `~/.local/bin/` directory (you can also change the link destination path by passing it as an argument to the install script).
+
+> If you did not clone the repository in `~/.recipe`, don't forget to set the `RECIPE_INSTALL_DIR` environment variable globally afterwards!
 
 ### Manually
 
