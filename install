@@ -1,7 +1,0 @@
-#!/usr/bin/env bash
-#
-# Install recipe script
-#
-destination="${1:-${HOME}/.local/bin}"
-
-RECIPE_INSTALL_DIR="$(pwd)" ./recipe link "${destination}"
