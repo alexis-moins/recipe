@@ -1,11 +1,9 @@
 local file="${args[file]}"
 local recipe="${args[name]:-$(basename "${file}")}"
 
-local edit="${args[--edit]}"
-local force="${args[--force]}"
-
-if [[ -f "${RECIPE_BOOK_DIR}/${recipe}" ]] && [[ -z "${force}" ]]; then
-    error "your recipe book already contains that recipe" && exit 1
+if recipe_exists "${recipe}"; then
+    error "recipe already exists: ${recipe}"
+    exit 1
 fi
 
 # Full destination path to the recipe
@@ -24,14 +22,4 @@ if [[ "${recipe}" = */* ]]; then
 fi
 
 command cp "${file}" "${destination_path}"
-
-# Edit the file if the --edit flag was passed
-[[ -n "${edit}" ]] && command "${EDITOR}" "${destination_path}"
-
-if [[ -f "${destination_path}" ]]; then
-    success "added new recipe ${recipe}"
-else
-    clean_directory "${destination_dir}"
-    error "recipe not added"
-    exit 1
-fi
+success "added recipe: ${recipe}"

@@ -9,8 +9,6 @@ GREEN="\e[32;1m"
 
 destination="${1:-"${HOME}/.local/bin"}"
 
-./recipe uninstall-hook
-
 if [[ -f "${destination}/recipe" ]]; then
     command rm "${destination}/recipe"
 fi

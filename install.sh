@@ -9,10 +9,8 @@ GREEN="\e[32;1m"
 
 destination="${1:-"${HOME}/.local/bin"}"
 
-./recipe install-hook
-
 if [[ ! -f "${destination}/recipe" ]]; then
-    command cp -i recope "${destination}/recipe"
+    command cp -i recipe "${destination}/recipe"
 fi
 
 echo -e "${GREEN}✓${WHITE} recipe is ready to use"

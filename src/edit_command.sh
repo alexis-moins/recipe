@@ -1,7 +1,5 @@
 local recipe="${args[name]}"
 
-[[ -z "${recipe}" ]] && recipe="$(filter_recipe)"
-
 local recipe_dir="$(dirname ${recipe})"
 
 # Full destination path to the recipe
