@@ -16,6 +16,13 @@ dependencies:
   - git
   - gum
 
+flags:
+  - short: -b
+    long: --recipe-book
+    arg: recipe_book
+    help: Name of the recipe book
+    validate: recipe_book_exists
+
 commands:
   - name: add
     help: Add a new recipe

@@ -93,6 +93,9 @@ Recipe Book Commands:
   cd        Navigate to your recipe book in a new shell
 
 Options:
+  --recipe-book, -b RECIPE_BOOK
+    Name of the recipe book
+
   --help, -h
     Show this help
 

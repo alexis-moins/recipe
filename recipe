@@ -3,7 +3,7 @@
 # Modifying it manually is not recommended
 
 if [[ "${BASH_VERSINFO:-0}" -lt 4 ]]; then
-  printf "$(red pm:) bash version 4 or higher is required\n" >&2
+  printf "$(red recipe:) bash version 4 or higher is required\n" >&2
   exit 1
 fi
 
@@ -15,7 +15,7 @@ recipe_usage() {
   printf "recipe - store redundant files in a recipe book to use them anytime, anywhere\n\n"
 
   printf "%s\n" "Usage:"
-  printf "  recipe COMMAND\n"
+  printf "  recipe [OPTIONS] COMMAND\n"
   printf "  recipe [COMMAND] --help | -h\n"
   printf "  recipe --version | -v\n"
   echo
@@ -47,7 +47,11 @@ recipe_usage() {
   echo
 
   if [[ -n "$long_usage" ]]; then
-    printf "%s\n" "Options:"
+    printf "%s\n" "Global Options:"
+
+    printf "  %s\n" "--recipe-book, -b RECIPE_BOOK"
+    printf "    Name of the recipe book\n"
+    echo
 
     printf "  %s\n" "--help, -h"
     printf "    Show this help\n"
@@ -1089,6 +1093,18 @@ parse_requirements() {
         exit
         ;;
 
+      --recipe-book | -b)
+
+        if [[ -n ${2+x} ]]; then
+          args['--recipe-book']="$2"
+          shift
+          shift
+        else
+          printf "%s\n" "$(red recipe:) --recipe-book requires an argument: --recipe-book, -b RECIPE_BOOK" >&2
+          exit 1
+        fi
+        ;;
+
       *)
         break
         ;;
@@ -1105,14 +1121,14 @@ parse_requirements() {
   if command -v git >/dev/null 2>&1; then
     deps['git']="$(command -v git | head -n1)"
   else
-    printf "$(red pm:) missing dependency: git\n" >&2
+    printf "$(red recipe:) missing dependency: git\n" >&2
     exit 1
   fi
 
   if command -v gum >/dev/null 2>&1; then
     deps['gum']="$(command -v gum | head -n1)"
   else
-    printf "$(red pm:) missing dependency: gum\n" >&2
+    printf "$(red recipe:) missing dependency: gum\n" >&2
     exit 1
   fi
 
@@ -1246,7 +1262,7 @@ parse_requirements() {
       ;;
 
     *)
-      printf "$(red pm:) invalid command: %s\n" "$action" >&2
+      printf "$(red recipe:) invalid command: %s\n" "$action" >&2
       exit 1
       ;;
 
@@ -1257,19 +1273,24 @@ parse_requirements() {
     case "$key" in
 
       -?*)
-        printf "$(red pm:) invalid option: %s\n" "$key" >&2
+        printf "$(red recipe:) invalid option: %s\n" "$key" >&2
         exit 1
         ;;
 
       *)
 
-        printf "$(red pm:) invalid argument: %s\n" "$key" >&2
+        printf "$(red recipe:) invalid argument: %s\n" "$key" >&2
         exit 1
 
         ;;
 
     esac
   done
+
+  if [[ -v args['--recipe-book'] && -n $(validate_recipe_book_exists "${args['--recipe-book']:-}") ]]; then
+    printf "$(red recipe:) validation error in %s:\n%s\n" "--recipe-book, -b RECIPE_BOOK" "$(validate_recipe_book_exists "${args['--recipe-book']:-}")" >&2
+    exit 1
+  fi
 
 }
 
@@ -1297,7 +1318,7 @@ recipe_add_parse_requirements() {
     case "$key" in
 
       -?*)
-        printf "$(red pm:) invalid option: %s\n" "$key" >&2
+        printf "$(red recipe:) invalid option: %s\n" "$key" >&2
         exit 1
         ;;
 
@@ -1311,7 +1332,7 @@ recipe_add_parse_requirements() {
           args['name']=$1
           shift
         else
-          printf "$(red pm:) invalid argument: %s\n" "$key" >&2
+          printf "$(red recipe:) invalid argument: %s\n" "$key" >&2
           exit 1
         fi
 
@@ -1321,18 +1342,18 @@ recipe_add_parse_requirements() {
   done
 
   if [[ -z ${args['file']+x} ]]; then
-    printf "$(red pm:) missing required argument: FILE\nusage: recipe add FILE [NAME]\n" >&2
+    printf "$(red recipe:) missing required argument: FILE\nusage: recipe add FILE [NAME]\n" >&2
 
     exit 1
   fi
 
   if [[ -v args['file'] && -n $(validate_file_exists "${args['file']:-}") ]]; then
-    printf "$(red pm:) validation error in %s:\n%s\n" "FILE" "$(validate_file_exists "${args['file']:-}")" >&2
+    printf "$(red recipe:) validation error in %s:\n%s\n" "FILE" "$(validate_file_exists "${args['file']:-}")" >&2
     exit 1
   fi
 
   if [[ -v args['name'] && -n $(validate_recipe_is_missing "${args['name']:-}") ]]; then
-    printf "$(red pm:) validation error in %s:\n%s\n" "NAME" "$(validate_recipe_is_missing "${args['name']:-}")" >&2
+    printf "$(red recipe:) validation error in %s:\n%s\n" "NAME" "$(validate_recipe_is_missing "${args['name']:-}")" >&2
     exit 1
   fi
 
@@ -1374,13 +1395,13 @@ recipe_list_parse_requirements() {
     case "$key" in
 
       -?*)
-        printf "$(red pm:) invalid option: %s\n" "$key" >&2
+        printf "$(red recipe:) invalid option: %s\n" "$key" >&2
         exit 1
         ;;
 
       *)
 
-        printf "$(red pm:) invalid argument: %s\n" "$key" >&2
+        printf "$(red recipe:) invalid argument: %s\n" "$key" >&2
         exit 1
 
         ;;
@@ -1426,13 +1447,13 @@ recipe_filter_parse_requirements() {
     case "$key" in
 
       -?*)
-        printf "$(red pm:) invalid option: %s\n" "$key" >&2
+        printf "$(red recipe:) invalid option: %s\n" "$key" >&2
         exit 1
         ;;
 
       *)
 
-        printf "$(red pm:) invalid argument: %s\n" "$key" >&2
+        printf "$(red recipe:) invalid argument: %s\n" "$key" >&2
         exit 1
 
         ;;
@@ -1478,7 +1499,7 @@ recipe_use_parse_requirements() {
     case "$key" in
 
       -?*)
-        printf "$(red pm:) invalid option: %s\n" "$key" >&2
+        printf "$(red recipe:) invalid option: %s\n" "$key" >&2
         exit 1
         ;;
 
@@ -1492,7 +1513,7 @@ recipe_use_parse_requirements() {
           args['destination']=$1
           shift
         else
-          printf "$(red pm:) invalid argument: %s\n" "$key" >&2
+          printf "$(red recipe:) invalid argument: %s\n" "$key" >&2
           exit 1
         fi
 
@@ -1502,13 +1523,13 @@ recipe_use_parse_requirements() {
   done
 
   if [[ -z ${args['recipe']+x} ]]; then
-    printf "$(red pm:) missing required argument: RECIPE\nusage: recipe use RECIPE [DESTINATION]\n" >&2
+    printf "$(red recipe:) missing required argument: RECIPE\nusage: recipe use RECIPE [DESTINATION]\n" >&2
 
     exit 1
   fi
 
   if [[ -v args['recipe'] && -n $(validate_recipe_exists "${args['recipe']:-}") ]]; then
-    printf "$(red pm:) validation error in %s:\n%s\n" "RECIPE" "$(validate_recipe_exists "${args['recipe']:-}")" >&2
+    printf "$(red recipe:) validation error in %s:\n%s\n" "RECIPE" "$(validate_recipe_exists "${args['recipe']:-}")" >&2
     exit 1
   fi
 
@@ -1556,7 +1577,7 @@ recipe_remove_parse_requirements() {
     case "$key" in
 
       -?*)
-        printf "$(red pm:) invalid option: %s\n" "$key" >&2
+        printf "$(red recipe:) invalid option: %s\n" "$key" >&2
         exit 1
         ;;
 
@@ -1566,7 +1587,7 @@ recipe_remove_parse_requirements() {
           args['name']=$1
           shift
         else
-          printf "$(red pm:) invalid argument: %s\n" "$key" >&2
+          printf "$(red recipe:) invalid argument: %s\n" "$key" >&2
           exit 1
         fi
 
@@ -1576,13 +1597,13 @@ recipe_remove_parse_requirements() {
   done
 
   if [[ -z ${args['name']+x} ]]; then
-    printf "$(red pm:) missing required argument: NAME\nusage: recipe remove NAME\n" >&2
+    printf "$(red recipe:) missing required argument: NAME\nusage: recipe remove NAME\n" >&2
 
     exit 1
   fi
 
   if [[ -v args['name'] && -n $(validate_recipe_exists "${args['name']:-}") ]]; then
-    printf "$(red pm:) validation error in %s:\n%s\n" "NAME" "$(validate_recipe_exists "${args['name']:-}")" >&2
+    printf "$(red recipe:) validation error in %s:\n%s\n" "NAME" "$(validate_recipe_exists "${args['name']:-}")" >&2
     exit 1
   fi
 
@@ -1630,7 +1651,7 @@ recipe_edit_parse_requirements() {
     case "$key" in
 
       -?*)
-        printf "$(red pm:) invalid option: %s\n" "$key" >&2
+        printf "$(red recipe:) invalid option: %s\n" "$key" >&2
         exit 1
         ;;
 
@@ -1640,7 +1661,7 @@ recipe_edit_parse_requirements() {
           args['name']=$1
           shift
         else
-          printf "$(red pm:) invalid argument: %s\n" "$key" >&2
+          printf "$(red recipe:) invalid argument: %s\n" "$key" >&2
           exit 1
         fi
 
@@ -1650,13 +1671,13 @@ recipe_edit_parse_requirements() {
   done
 
   if [[ -z ${args['name']+x} ]]; then
-    printf "$(red pm:) missing required argument: NAME\nusage: recipe edit NAME\n" >&2
+    printf "$(red recipe:) missing required argument: NAME\nusage: recipe edit NAME\n" >&2
 
     exit 1
   fi
 
   if [[ -v args['name'] && -n $(validate_recipe_exists "${args['name']:-}") ]]; then
-    printf "$(red pm:) validation error in %s:\n%s\n" "NAME" "$(validate_recipe_exists "${args['name']:-}")" >&2
+    printf "$(red recipe:) validation error in %s:\n%s\n" "NAME" "$(validate_recipe_exists "${args['name']:-}")" >&2
     exit 1
   fi
 
@@ -1710,13 +1731,13 @@ recipe_show_parse_requirements() {
           shift
           shift
         else
-          printf "%s\n" "$(red pm:) --exec requires an argument: --exec, -x EXECUTABLE" >&2
+          printf "%s\n" "$(red recipe:) --exec requires an argument: --exec, -x EXECUTABLE" >&2
           exit 1
         fi
         ;;
 
       -?*)
-        printf "$(red pm:) invalid option: %s\n" "$key" >&2
+        printf "$(red recipe:) invalid option: %s\n" "$key" >&2
         exit 1
         ;;
 
@@ -1726,7 +1747,7 @@ recipe_show_parse_requirements() {
           args['name']=$1
           shift
         else
-          printf "$(red pm:) invalid argument: %s\n" "$key" >&2
+          printf "$(red recipe:) invalid argument: %s\n" "$key" >&2
           exit 1
         fi
 
@@ -1736,7 +1757,7 @@ recipe_show_parse_requirements() {
   done
 
   if [[ -z ${args['name']+x} ]]; then
-    printf "$(red pm:) missing required argument: NAME\nusage: recipe show NAME [OPTIONS]\n" >&2
+    printf "$(red recipe:) missing required argument: NAME\nusage: recipe show NAME [OPTIONS]\n" >&2
 
     exit 1
   fi
@@ -1744,7 +1765,7 @@ recipe_show_parse_requirements() {
   [[ -n ${args['--exec']:-} ]] || args['--exec']="${RECIPE_SHOW_CMD}"
 
   if [[ -v args['name'] && -n $(validate_recipe_exists "${args['name']:-}") ]]; then
-    printf "$(red pm:) validation error in %s:\n%s\n" "NAME" "$(validate_recipe_exists "${args['name']:-}")" >&2
+    printf "$(red recipe:) validation error in %s:\n%s\n" "NAME" "$(validate_recipe_exists "${args['name']:-}")" >&2
     exit 1
   fi
 
@@ -1792,13 +1813,13 @@ recipe_env_parse_requirements() {
     case "$key" in
 
       -?*)
-        printf "$(red pm:) invalid option: %s\n" "$key" >&2
+        printf "$(red recipe:) invalid option: %s\n" "$key" >&2
         exit 1
         ;;
 
       *)
 
-        printf "$(red pm:) invalid argument: %s\n" "$key" >&2
+        printf "$(red recipe:) invalid argument: %s\n" "$key" >&2
         exit 1
 
         ;;
@@ -1838,13 +1859,13 @@ recipe_status_parse_requirements() {
         ;;
 
       -?*)
-        printf "$(red pm:) invalid option: %s\n" "$key" >&2
+        printf "$(red recipe:) invalid option: %s\n" "$key" >&2
         exit 1
         ;;
 
       *)
 
-        printf "$(red pm:) invalid argument: %s\n" "$key" >&2
+        printf "$(red recipe:) invalid argument: %s\n" "$key" >&2
         exit 1
 
         ;;
@@ -1890,13 +1911,13 @@ recipe_stage_parse_requirements() {
     case "$key" in
 
       -?*)
-        printf "$(red pm:) invalid option: %s\n" "$key" >&2
+        printf "$(red recipe:) invalid option: %s\n" "$key" >&2
         exit 1
         ;;
 
       *)
 
-        printf "$(red pm:) invalid argument: %s\n" "$key" >&2
+        printf "$(red recipe:) invalid argument: %s\n" "$key" >&2
         exit 1
 
         ;;
@@ -1942,13 +1963,13 @@ recipe_unstage_parse_requirements() {
     case "$key" in
 
       -?*)
-        printf "$(red pm:) invalid option: %s\n" "$key" >&2
+        printf "$(red recipe:) invalid option: %s\n" "$key" >&2
         exit 1
         ;;
 
       *)
 
-        printf "$(red pm:) invalid argument: %s\n" "$key" >&2
+        printf "$(red recipe:) invalid argument: %s\n" "$key" >&2
         exit 1
 
         ;;
@@ -1994,13 +2015,13 @@ recipe_restore_parse_requirements() {
     case "$key" in
 
       -?*)
-        printf "$(red pm:) invalid option: %s\n" "$key" >&2
+        printf "$(red recipe:) invalid option: %s\n" "$key" >&2
         exit 1
         ;;
 
       *)
 
-        printf "$(red pm:) invalid argument: %s\n" "$key" >&2
+        printf "$(red recipe:) invalid argument: %s\n" "$key" >&2
         exit 1
 
         ;;
@@ -2052,13 +2073,13 @@ recipe_diff_parse_requirements() {
         ;;
 
       -?*)
-        printf "$(red pm:) invalid option: %s\n" "$key" >&2
+        printf "$(red recipe:) invalid option: %s\n" "$key" >&2
         exit 1
         ;;
 
       *)
 
-        printf "$(red pm:) invalid argument: %s\n" "$key" >&2
+        printf "$(red recipe:) invalid argument: %s\n" "$key" >&2
         exit 1
 
         ;;
@@ -2104,7 +2125,7 @@ recipe_commit_parse_requirements() {
     case "$key" in
 
       -?*)
-        printf "$(red pm:) invalid option: %s\n" "$key" >&2
+        printf "$(red recipe:) invalid option: %s\n" "$key" >&2
         exit 1
         ;;
 
@@ -2114,7 +2135,7 @@ recipe_commit_parse_requirements() {
           args['message']=$1
           shift
         else
-          printf "$(red pm:) invalid argument: %s\n" "$key" >&2
+          printf "$(red recipe:) invalid argument: %s\n" "$key" >&2
           exit 1
         fi
 
@@ -2161,13 +2182,13 @@ recipe_cd_parse_requirements() {
     case "$key" in
 
       -?*)
-        printf "$(red pm:) invalid option: %s\n" "$key" >&2
+        printf "$(red recipe:) invalid option: %s\n" "$key" >&2
         exit 1
         ;;
 
       *)
 
-        printf "$(red pm:) invalid argument: %s\n" "$key" >&2
+        printf "$(red recipe:) invalid argument: %s\n" "$key" >&2
         exit 1
 
         ;;
@@ -2234,7 +2255,7 @@ recipe_git_parse_requirements() {
   done
 
   if [[ ${#other_args[@]} -eq 0 ]]; then
-    printf "$(red pm:) missing required argument: COMMANDS...\nusage: recipe git [--] COMMANDS...\n" >&2
+    printf "$(red recipe:) missing required argument: COMMANDS...\nusage: recipe git [--] COMMANDS...\n" >&2
     exit 1
   fi
 
@@ -2308,7 +2329,7 @@ recipe_book_parse_requirements() {
       ;;
 
     *)
-      printf "$(red pm:) invalid command: %s\n" "$action" >&2
+      printf "$(red recipe:) invalid command: %s\n" "$action" >&2
       exit 1
       ;;
 
@@ -2319,13 +2340,13 @@ recipe_book_parse_requirements() {
     case "$key" in
 
       -?*)
-        printf "$(red pm:) invalid option: %s\n" "$key" >&2
+        printf "$(red recipe:) invalid option: %s\n" "$key" >&2
         exit 1
         ;;
 
       *)
 
-        printf "$(red pm:) invalid argument: %s\n" "$key" >&2
+        printf "$(red recipe:) invalid argument: %s\n" "$key" >&2
         exit 1
 
         ;;
@@ -2359,13 +2380,13 @@ recipe_book_list_parse_requirements() {
     case "$key" in
 
       -?*)
-        printf "$(red pm:) invalid option: %s\n" "$key" >&2
+        printf "$(red recipe:) invalid option: %s\n" "$key" >&2
         exit 1
         ;;
 
       *)
 
-        printf "$(red pm:) invalid argument: %s\n" "$key" >&2
+        printf "$(red recipe:) invalid argument: %s\n" "$key" >&2
         exit 1
 
         ;;
@@ -2399,7 +2420,7 @@ recipe_book_global_parse_requirements() {
     case "$key" in
 
       -?*)
-        printf "$(red pm:) invalid option: %s\n" "$key" >&2
+        printf "$(red recipe:) invalid option: %s\n" "$key" >&2
         exit 1
         ;;
 
@@ -2409,7 +2430,7 @@ recipe_book_global_parse_requirements() {
           args['recipe-book']=$1
           shift
         else
-          printf "$(red pm:) invalid argument: %s\n" "$key" >&2
+          printf "$(red recipe:) invalid argument: %s\n" "$key" >&2
           exit 1
         fi
 
@@ -2419,13 +2440,13 @@ recipe_book_global_parse_requirements() {
   done
 
   if [[ -z ${args['recipe-book']+x} ]]; then
-    printf "$(red pm:) missing required argument: RECIPE-BOOK\nusage: recipe book global RECIPE-BOOK\n" >&2
+    printf "$(red recipe:) missing required argument: RECIPE-BOOK\nusage: recipe book global RECIPE-BOOK\n" >&2
 
     exit 1
   fi
 
   if [[ -v args['recipe-book'] && -n $(validate_recipe_book_exists "${args['recipe-book']:-}") ]]; then
-    printf "$(red pm:) validation error in %s:\n%s\n" "RECIPE-BOOK" "$(validate_recipe_book_exists "${args['recipe-book']:-}")" >&2
+    printf "$(red recipe:) validation error in %s:\n%s\n" "RECIPE-BOOK" "$(validate_recipe_book_exists "${args['recipe-book']:-}")" >&2
     exit 1
   fi
 
@@ -2455,7 +2476,7 @@ recipe_book_local_parse_requirements() {
     case "$key" in
 
       -?*)
-        printf "$(red pm:) invalid option: %s\n" "$key" >&2
+        printf "$(red recipe:) invalid option: %s\n" "$key" >&2
         exit 1
         ;;
 
@@ -2465,7 +2486,7 @@ recipe_book_local_parse_requirements() {
           args['recipe-book']=$1
           shift
         else
-          printf "$(red pm:) invalid argument: %s\n" "$key" >&2
+          printf "$(red recipe:) invalid argument: %s\n" "$key" >&2
           exit 1
         fi
 
@@ -2475,13 +2496,13 @@ recipe_book_local_parse_requirements() {
   done
 
   if [[ -z ${args['recipe-book']+x} ]]; then
-    printf "$(red pm:) missing required argument: RECIPE-BOOK\nusage: recipe book local RECIPE-BOOK\n" >&2
+    printf "$(red recipe:) missing required argument: RECIPE-BOOK\nusage: recipe book local RECIPE-BOOK\n" >&2
 
     exit 1
   fi
 
   if [[ -v args['recipe-book'] && -n $(validate_recipe_book_exists "${args['recipe-book']:-}") ]]; then
-    printf "$(red pm:) validation error in %s:\n%s\n" "RECIPE-BOOK" "$(validate_recipe_book_exists "${args['recipe-book']:-}")" >&2
+    printf "$(red recipe:) validation error in %s:\n%s\n" "RECIPE-BOOK" "$(validate_recipe_book_exists "${args['recipe-book']:-}")" >&2
     exit 1
   fi
 
@@ -2511,7 +2532,7 @@ recipe_book_add_parse_requirements() {
     case "$key" in
 
       -?*)
-        printf "$(red pm:) invalid option: %s\n" "$key" >&2
+        printf "$(red recipe:) invalid option: %s\n" "$key" >&2
         exit 1
         ;;
 
@@ -2525,7 +2546,7 @@ recipe_book_add_parse_requirements() {
           args['repository']=$1
           shift
         else
-          printf "$(red pm:) invalid argument: %s\n" "$key" >&2
+          printf "$(red recipe:) invalid argument: %s\n" "$key" >&2
           exit 1
         fi
 
@@ -2535,14 +2556,29 @@ recipe_book_add_parse_requirements() {
   done
 
   if [[ -z ${args['recipe-book']+x} ]]; then
-    printf "$(red pm:) missing required argument: RECIPE-BOOK\nusage: recipe book add RECIPE-BOOK [REPOSITORY]\n" >&2
+    printf "$(red recipe:) missing required argument: RECIPE-BOOK\nusage: recipe book add RECIPE-BOOK [REPOSITORY]\n" >&2
 
     exit 1
   fi
 
   if [[ -v args['recipe-book'] && -n $(validate_recipe_book_is_missing "${args['recipe-book']:-}") ]]; then
-    printf "$(red pm:) validation error in %s:\n%s\n" "RECIPE-BOOK" "$(validate_recipe_book_is_missing "${args['recipe-book']:-}")" >&2
+    printf "$(red recipe:) validation error in %s:\n%s\n" "RECIPE-BOOK" "$(validate_recipe_book_is_missing "${args['recipe-book']:-}")" >&2
     exit 1
+  fi
+
+}
+
+before_hook() {
+  local recipe_book="${args[--recipe-book]}"
+
+  # Override the RECIPE_BOOK and RECIPE_BOOK_DIR variable if the --recipe-book
+  # flag was passed.
+  if [[ -n "${recipe_book}" ]]; then
+      # Name of the current recipe book
+      export RECIPE_BOOK="${recipe_book}"
+
+      # Path to the current recipe book
+      export RECIPE_BOOK_DIR="${RECIPE_DATA_DIR}/shelf/${RECIPE_BOOK}"
   fi
 
 }
@@ -2600,6 +2636,7 @@ run() {
   declare -a input=()
   normalize_input "$@"
   parse_requirements "${input[@]}"
+  before_hook
 
   case "$action" in
     "add") recipe_add_command ;;
