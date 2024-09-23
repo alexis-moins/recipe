@@ -1,19 +1,12 @@
 name: recipe
 help: store redundant files in a recipe book to use them anytime, anywhere
-version: 1.7.0
+version: 1.7.1
 
 environment_variables:
   - name: EDITOR
     help: Editor used for interactive commands
     default: vim
-
-  - name: RECIPE_BOOK_DIR
-    help: Directory used to store recipes
-    default: ${HOME}/recipe-book
-
-  - name: RECIPE_INSTALL_DIR
-    help: Directory where the reporitory was cloned
-    default: ${HOME}/.recipe
+    private: true
 
   - name: RECIPE_SHOW_CMD
     help: Command used to show recipes
@@ -23,30 +16,14 @@ dependencies:
   - git
   - gum
 
+flags:
+  - short: -b
+    long: --recipe-book
+    arg: recipe_book
+    help: Name of the recipe book
+    validate: recipe_book_exists
+
 commands:
-  - name: help
-    help: Show help about a command
-    args:
-    - name: command
-      help: Help subject
-
-  - name: init
-    help: Initialize a recipe book or clone one
-    group: Recipe Book
-
-    args:
-      - name: repository
-        help: Remote repository url
-
-    flags:
-      - short: -f
-        long: --force
-        help: Overwrite existing recipe book
-
-    examples:
-      - recipe init
-      - recipe init git@github.com:<username>/recipe-book.git
-
   - name: add
     help: Add a new recipe
     group: Recipe
@@ -63,17 +40,10 @@ commands:
 
       - name: name
         help: Name of the recipe
-
-    flags:
-      - short: -e
-        long: --edit
-        help: Edit the recipe once it has been added
-
-      - short: -f
-        long: --force
-        help: Overwrite existing recipe
+        validate: recipe_is_missing
 
     examples:
+      - recipe add Dockerfile
       - recipe add Dockerfile docker/elixir
 
   - name: list
@@ -88,6 +58,17 @@ commands:
     examples:
       - recipe list
 
+  - name: filter
+    help: Filter recipes
+    group: Recipe
+
+    filters:
+      - recipe_book_directory
+      - recipe_book_git
+
+    examples:
+      - recipe filter
+
   - name: use
     help: Use a recipe locally
     group: Recipe
@@ -100,19 +81,11 @@ commands:
     args:
       - name: recipe
         help: Name of the recipe
+        required: true
         validate: recipe_exists
 
       - name: destination
         help: Destination to copy the recipe to
-
-    flags:
-      - short: -e
-        long: --edit
-        help: Edit the destination recipe
-
-      - short: -f
-        long: --force
-        help: Overwrite destination file
 
     examples:
       - recipe use
@@ -131,11 +104,11 @@ commands:
     args:
       - name: name
         help: Name of the recipe to remove
+        required: true
         validate: recipe_exists
 
     examples:
-      - recipe remove
-      - recipe remove ssh-config
+      - recipe remove docker/elixir
 
   - name: edit
     help: Edit a recipe
@@ -144,6 +117,7 @@ commands:
     args:
       - name: name
         help: Name of the recipe to edit
+        required: true
         validate: recipe_exists
 
     filters:
@@ -152,36 +126,7 @@ commands:
       - recipe_book_not_empty
 
     examples:
-      - recipe edit
-      - recipe edit ssh-config
-
-  - name: link
-    help: Create a link to the recipe script
-
-    args:
-      - name: path
-        help: Path to the link
-        default: ${HOME}/.local/bin
-
-    flags:
-      - short: -c
-        long: --copy
-        help: Copy the script instead of creating a symbolic link
-
-    examples:
-      - recipe link -c
-      - recipe link /usr/bin
-
-  - name: unlink
-    help: Remove the link to the recipe script
-
-    args:
-      - name: path
-        help: Path to the link
-        default: ${HOME}/.local/bin
-
-    examples:
-      - recipe unlink
+      - recipe edit LICENSE/mit
 
   - name: show
     help: Show the content of a recipe
@@ -195,45 +140,25 @@ commands:
     args:
       - name: name
         help: Name of the recipe
+        required: true
         validate: recipe_exists
 
     flags:
-      - short: -e
+      - short: -x
         long: --exec
         arg: executable
         default: ${RECIPE_SHOW_CMD}
         help: Command used to show the recipe
 
     examples:
-      - recipe show -e bat
-      - recipe show docker/express-js
-
-  - name: update
-    help: Update recipe to the latest version
-
-  - name: filter
-    help: Interactively filter recipes
-    group: Recipe
-
-    filters:
-      - recipe_book_directory
-      - recipe_book_git
-      - recipe_book_not_empty
-
-    examples:
-      - recipe filter
+      - recipe show LICENSE/mit
+      - recipe show LICENSE/mit -x bat
 
   - name: env
-    help: Show environment information
-
-    args:
-      - name: variable
-        help: Name of the environment variable to show
-        allowed: [RECIPE_INSTALL_DIR, RECIPE_BOOK_DIR, RECIPE_SHOW_CMD]
+    help: Print environment information
 
     examples:
       - recipe env
-      - recipe env RECIPE_INSTALL_DIR
 
   - name: status
     help: Show the status of your recipe book
@@ -253,12 +178,8 @@ commands:
       - recipe status
 
   - name: stage
-    help: Stage files
+    help: Stage files interactively
     group: Git
-
-    catch_all:
-      label: files
-      help: Files to stage (relative to \$RECIPE_BOOK_DIR)
 
     filters:
       - recipe_book_directory
@@ -268,12 +189,8 @@ commands:
       - recipe stage
 
   - name: unstage
-    help: Unstage files
+    help: Unstage files interactively
     group: Git
-
-    catch_all:
-      label: files
-      help: Files to unstage (relative to \$RECIPE_BOOK_DIR)
 
     filters:
       - recipe_book_directory
@@ -283,13 +200,9 @@ commands:
       - recipe unstage
 
   - name: restore
-    help: Restore unstaged files (undo changes)
-    alias: rs
+    help: Restore unstaged files interactively
+    alias: [rs, undo]
     group: Git
-
-    catch_all:
-      label: files
-      help: Files to restore (relative to \$RECIPE_BOOK_DIR)
 
     filters:
       - recipe_book_directory
@@ -358,3 +271,54 @@ commands:
     examples:
       - recipe git switch -c <new-branch>
 
+  - name: book
+    help: List, filter, and add recipe books
+
+    commands:
+      - name: list
+        alias: ls
+        help: List recipe books
+
+        examples:
+          - recipe book list
+
+      - name: global
+        alias: g
+        help: Set a recipe book as global
+
+        args:
+          - name: recipe-book
+            help: Name of the recipe book
+            required: true
+            validate: recipe_book_exists
+
+        examples:
+          - recipe book global personal
+
+      - name: local
+        alias: l
+        help: Set a recipe book as local
+
+        args:
+          - name: recipe-book
+            help: Name of the recipe book
+            required: true
+            validate: recipe_book_exists
+
+        examples:
+          - recipe book local personal
+
+      - name: add
+        help: Add a new recipe book
+
+        args:
+          - name: recipe-book
+            help: Name of the recipe book
+            required: true
+            validate: recipe_book_is_missing
+
+          - name: repository
+            help: Remote repository url
+
+        examples:
+          - recipe book add personal

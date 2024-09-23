@@ -1,3 +1,1 @@
-local recipes="$(find_recipe)"
-
-echo "${recipes}" | gum filter --placeholder "Select a recipe..."
+list_recipes | command "${deps[gum]}" filter --placeholder "Filter recipes"

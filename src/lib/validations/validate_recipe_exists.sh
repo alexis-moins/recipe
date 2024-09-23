@@ -1,3 +1,5 @@
 validate_recipe_exists() {
-    [[ -f "${RECIPE_BOOK_DIR}/$1" ]] || echo "must be an existing recipe"
+    if ! recipe_exists "${1}"; then
+        error "recipe not found: ${1}"
+    fi
 }
